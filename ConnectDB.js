@@ -1,8 +1,14 @@
-require("dotenv").config();
+// 환경변수가 없으면 기본값 설정
+require('dotenv').config();
+const dbHost = process.env.DB_HOST || 'localhost';  // DB_HOST가 없으면 'localhost' 사용
+const dbPort = process.env.DB_PORT || 5432;        // DB_PORT가 없으면 5432 사용
+const dbUser = process.env.DB_USER || 'defaultUser'; // DB_USER가 없으면 'defaultUser' 사용
+const dbPassword = process.env.DB_PASSWORD || 'defaultPassword'; // DB_PASSWORD가 없으면 'defaultPassword' 사용
+const dbName = process.env.DB_DBNAME || 'defaultDatabase'; // DB_DBNAME이 없으면 'defaultDatabase' 사용
 const { Pool } = require('pg');
 const sql = new Pool({
   host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
+  port: 5432,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_DBNAME
