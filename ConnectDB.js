@@ -8,7 +8,7 @@ const dbName = process.env.DB_DBNAME || 'defaultDatabase'; // DB_DBNAME이 없�
 const { Pool } = require('pg');
 const sql = new Pool({
   host: process.env.DB_HOST,
-  port: 5432,
+  port: process.env.DB_PORT,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_DBNAME
@@ -19,16 +19,16 @@ async function ConnectDB() {
         await sql.connect();
         console.log("DB에 접속하였습니다.");
         await HaveCorrectTable("doc", {
-          columns: {
-              title: 'text',
-              body: 'text',
-              createdtime: 'timestamp with time zone'
-          },
-          primaryKey: ['title'],  // Primary Key 설정
-          default: {
-              createdtime: 'CURRENT_TIMESTAMP'  // createdtime 컬럼의 기본값을 현재 시각으로 설정
-          }
-      });
+            columns: {
+                title: 'text',
+                body: 'text',
+                createdtime: 'timestamp with time zone'
+            },
+            primaryKey: ['title'],  // Primary Key 설정
+            default: {
+                createdtime: 'CURRENT_TIMESTAMP'  // createdtime 컬럼의 기본값을 현재 시각으로 설정
+            }
+        });
     } catch (err) {
         console.log("err:" + err.message);
     }
@@ -36,22 +36,22 @@ async function ConnectDB() {
 
 // 테이블 존재 여부 확인 및 생성
 async function HaveCorrectTable(name, options) {
-  const checkTableQuery = `SELECT table_name FROM information_schema.tables WHERE table_name = $1`; // 테이블 존재 여부 확인 쿼리
-  
-  try {
-      const res = await sql.query(checkTableQuery, [name]);
+    const checkTableQuery = `SELECT table_name FROM information_schema.tables WHERE table_name = $1`; // 테이블 존재 여부 확인 쿼리
 
-      if (res.rows.length === 0) {
-          // 테이블이 존재하지 않으면 생성
-          await createTable(name, options);
-      } else {
-          // 테이블이 존재하면 포맷 확인
-          await checkTableFormat(name, options);
-      }
-  } catch (err) {
-      console.error('테이블 확인 실패:', err.stack);
-      process.exit(1); // 에러가 발생하면 종료
-  }
+    try {
+        const res = await sql.query(checkTableQuery, [name]);
+
+        if (res.rows.length === 0) {
+            // 테이블이 존재하지 않으면 생성
+            await createTable(name, options);
+        } else {
+            // 테이블이 존재하면 포맷 확인
+            await checkTableFormat(name, options);
+        }
+    } catch (err) {
+        console.error('테이블 확인 실패:', err.stack);
+        process.exit(1); // 에러가 발생하면 종료
+    }
 }
 
 // 테이블 포맷 확인 (컬럼 및 제약 조건 포함)
@@ -61,11 +61,11 @@ async function checkTableFormat(name, options) {
         FROM information_schema.columns
         WHERE table_name = $1
     `;
-    
+
     try {
         const res = await sql.query(describeTableQuery, [name]);
         const currentFormat = {};  // 현재 테이블의 컬럼명과 타입을 담을 객체
-        
+
         res.rows.forEach(row => {
             currentFormat[row.column_name] = row.data_type;
         });
@@ -74,12 +74,12 @@ async function checkTableFormat(name, options) {
         for (const column in options.columns) {
             if (!currentFormat[column]) {
                 console.error(`Error: '${column}' 컬럼이 존재하지 않습니다.`);
-                process.exit(1); 
+                process.exit(1);
             }
 
             if (currentFormat[column] !== options.columns[column]) {
                 console.error(`Error: '${column}'의 타입이 '${currentFormat[column]}'입니다. '${options.columns[column]}'이어야 합니다.`);
-                process.exit(1); 
+                process.exit(1);
             }
         }
 
@@ -100,7 +100,7 @@ async function checkConstraints(name, options) {
         FROM pg_constraint
         WHERE conrelid = (SELECT oid FROM pg_class WHERE relname = $1)
     `;
-    
+
     try {
         const res = await sql.query(describeConstraintsQuery, [name]);
         const constraints = res.rows.map(row => ({
@@ -155,40 +155,40 @@ async function getColumnsByOid(oidArray) {
 
 // 테이블 생성 함수 (제약 조건 포함)
 async function createTable(name, options) {
-  let createTableQuery = `CREATE TABLE ${name} (`;
+    let createTableQuery = `CREATE TABLE ${name} (`;
 
-  // 컬럼 정의
-  for (const column in options.columns) {
-      createTableQuery += `${column} ${options.columns[column]}`;
+    // 컬럼 정의
+    for (const column in options.columns) {
+        createTableQuery += `${column} ${options.columns[column]}`;
 
-      // `NOT NULL` 제약이 있을 경우
-      if (options.notNull && options.notNull.includes(column)) {
-          createTableQuery += ' NOT NULL';
-      }
+        // `NOT NULL` 제약이 있을 경우
+        if (options.notNull && options.notNull.includes(column)) {
+            createTableQuery += ' NOT NULL';
+        }
 
-      // 기본값 설정
-      if (options.default && options.default[column]) {
-          createTableQuery += ` DEFAULT ${options.default[column]}`;
-      }
+        // 기본값 설정
+        if (options.default && options.default[column]) {
+            createTableQuery += ` DEFAULT ${options.default[column]}`;
+        }
 
-      createTableQuery += ', ';  // 각 컬럼 정의 후 쉼표 추가
-  }
+        createTableQuery += ', ';  // 각 컬럼 정의 후 쉼표 추가
+    }
 
-  // Primary Key 추가
-  if (options.primaryKey && options.primaryKey.length > 0) {
-      createTableQuery += `PRIMARY KEY (${options.primaryKey.join(', ')}), `;
-  }
+    // Primary Key 추가
+    if (options.primaryKey && options.primaryKey.length > 0) {
+        createTableQuery += `PRIMARY KEY (${options.primaryKey.join(', ')}), `;
+    }
 
-  // 마지막 쉼표 제거 후 닫는 괄호 추가
-  createTableQuery = createTableQuery.slice(0, -2) + ')';
+    // 마지막 쉼표 제거 후 닫는 괄호 추가
+    createTableQuery = createTableQuery.slice(0, -2) + ')';
 
-  try {
-      await sql.query(createTableQuery);
-      console.log(`테이블 '${name}'이 성공적으로 생성되었습니다.`);
-  } catch (err) {
-      console.error('테이블 생성 실패:', err.stack);
-      process.exit(1); // 에러가 발생하면 종료
-  }
+    try {
+        await sql.query(createTableQuery);
+        console.log(`테이블 '${name}'이 성공적으로 생성되었습니다.`);
+    } catch (err) {
+        console.error('테이블 생성 실패:', err.stack);
+        process.exit(1); // 에러가 발생하면 종료
+    }
 }
 
 module.exports = { ConnectDB, sql };
