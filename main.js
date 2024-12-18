@@ -6,9 +6,9 @@ require("dotenv").config();
 
 app.get(`${process.env.REQ_DOCUMENT}:docname`, (req, res) => {
     let docname = req.params.docname;
-    sql.query(`SELECT * FROM doc WHERE title=?`, [docname], (err, resdb) => {
+    sql.query(`SELECT * FROM doc WHERE title=$1`, [docname], (err, resdb) => {
         if (err) { throw err; }
-        res.send(resdb[0])
+        res.send(resdb.rows[0])
     })
 
 })
