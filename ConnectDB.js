@@ -7,11 +7,11 @@ const dbPassword = process.env.DB_PASSWORD || 'defaultPassword'; // DB_PASSWORD�
 const dbName = process.env.DB_DBNAME || 'defaultDatabase'; // DB_DBNAME이 없으면 'defaultDatabase' 사용
 const { Pool } = require('pg');
 const sql = new Pool({
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_DBNAME
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_DBNAME
 });
 
 async function ConnectDB() {
