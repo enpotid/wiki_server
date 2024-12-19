@@ -194,47 +194,4 @@ async function createTable(name, options) {
     }
 }
 
-async function insertDoc(title, body) {
-    const checkQuery = `SELECT 1 FROM doc WHERE title = $1`;  // 동일한 title이 있는지 확인하는 쿼리
-    const insertQuery = `INSERT INTO doc (title, body) VALUES ($1, $2)`;  // 새로운 문서 추가 쿼리
-    
-    try {
-        // 동일한 title이 존재하는지 확인
-        const res = await sql.query(checkQuery, [title]);
-        
-        if (res.rows.length > 0) {
-            // 동일한 title이 존재하면 false 반환
-            console.log(`문서 '${title}'은 이미 존재합니다.`);
-            return false;
-        }
-
-        // 동일한 title이 없다면 문서 추가
-        await sql.query(insertQuery, [title, body]);
-        console.log(`문서 '${title}'가 성공적으로 추가되었습니다.`);
-        return true;
-    } catch (err) {
-        console.error('문서 추가 실패:', err.stack);
-        return false;  // 오류 발생 시 false 반환
-    }
-}
-
-async function updateDoc(title, body) {
-    const updateQuery = `UPDATE doc SET body = $2, lastmodifiedtime = CURRENT_TIMESTAMP WHERE title = $1`;
-
-    try {
-        const res = await sql.query(updateQuery, [title, body]);
-        
-        if (res.rowCount === 0) {
-            console.log(`제목 '${title}'에 해당하는 문서를 찾을 수 없습니다.`);
-            return false;  // 문서를 찾을 수 없으면 false 반환
-        } else {
-            console.log(`문서 '${title}'가 성공적으로 업데이트되었습니다.`);
-            return true;  // 문서가 성공적으로 업데이트되면 true 반환
-        }
-    } catch (err) {
-        console.error('문서 업데이트 실패:', err.stack);
-        return false;  // 에러가 발생한 경우 false 반환
-    }
-}
-
-module.exports = { insertDoc, updateDoc, ConnectDB, sql };
+module.exports = { ConnectDB, sql };
