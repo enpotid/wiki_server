@@ -7,10 +7,15 @@ require("dotenv").config();
 app.get(`/document/:docname`, (req, res) => {
     let docname = req.params.docname;
     sql.query(`SELECT * FROM doc WHERE title=$1`, [docname], (err, resdb) => {
-        if (err) { throw err; }
-        res.send(resdb.rows[0])
-    })
-})
+        if (err) { 
+            throw err; 
+        }
+        if (resdb.rows.length === 0) {
+            return res.status(404).send({ error: "Document not found" });
+        }
+        res.send(resdb.rows[0]);
+    });
+});
 
 app.get(`/documentmake/:title/:body`, (req, res) => {
     try {
