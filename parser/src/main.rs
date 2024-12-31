@@ -12,7 +12,7 @@ fn main() -> std::io::Result<()> {
     let mut temp4: String = String::new();
     let contents: String = fs::read_to_string("test.txt")?;
     let mut hooks:Vec<ParserHook> = Vec::new();
-    mkparser_hook("{#ARG}}", colorful_txt, &mut hooks);
+    mkparser_hook("{#ARG}", colorful_txt, &mut hooks);
     mkparser_hook("**ARG**", bold_txt, &mut hooks);
     let (result, nowikilist) = nowiki(contents.clone());
     temp.push_str(result.as_str());
@@ -92,6 +92,7 @@ fn parse (buf:&mut String, hookslist:Vec<ParserHook>) -> String {
                         in_grammar = false;
                         num_of_args += 1;
                         num_of_temps+= 1;
+                        i=0;
                         temp.push_str("ARGㅇㅅㅇ");
                         temp.push_str(num_of_temps.to_string().as_str());
                     }
@@ -100,7 +101,7 @@ fn parse (buf:&mut String, hookslist:Vec<ParserHook>) -> String {
                         args[num_of_args].push(end.chars().nth(val).unwrap_or('K'));
                     }
                     args[num_of_args].push(ch);
-                    i=correct_conut_end;
+                    i=correct_conut_start;
                 } else {
                     args[num_of_args].push(ch);
                 }
@@ -111,7 +112,6 @@ fn parse (buf:&mut String, hookslist:Vec<ParserHook>) -> String {
                 temp.push(ch);
             } else {
                 temp.push(ch);
-                print!("test{}", ch);
             }
         }
         //end of parse. But not parserhook iter. Now. args:Vec<String> has the paramiter of fun.
