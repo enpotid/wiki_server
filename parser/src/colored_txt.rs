@@ -3,45 +3,10 @@ use crate::{ParserHook, A};
 //1중 문법인 경우:248790|asdf -> asdf;<col=blue>
 //2중 문법인 경우:248790|asdfStartOfGrammarasdf;<col=red>EndOfGrammarqwer
 pub fn colored_txt (arg:String) -> String {
-    let argu = String::from(arg);
-    let mut result = String::new();
-    let custom_txt_start = "StartOfGrammar";
-    let custom_txt_end = "EndOfGrammar";
-    if !argu.contains("|") {
-        return argu;
-    }
-    let (mut color, mut text) = ("", "");
-    let binding = argu.clone();
-    if let Some((colorg, textg)) = binding.split_once("|") {
-        color = colorg;
-        text = textg;
-    };
-    let mut colorname = "";
-    match closest_color_name(&color) {
-        Some(color) => {
-            colorname = color;
-        },
-        None => colorname = "ERR_INVALID_HEX_COLOR"
-    }
-    let (mut before, mut etc) = ("", "");
-    if let Some((colorg, textg)) = binding.split_once(custom_txt_start) {
-        before = colorg;
-        etc = textg;
-    };
-    let (mut after, mut etc2) = ("", "");
-    if let Some((etcg, afterg)) = binding.split_once(custom_txt_end) {
-        etc2 = etcg;
-        after = afterg;
-    };
-//248790|fusion<a>hello;<col=green></a>tlqkf
-    //result.push_str(&custom_txt_start);
-    result.push_str(&text);
-    result.push_str(";");
-    result.push_str("<col=");
-    result.push_str(&colorname);
-    result.push_str(">\n");
-    //result.push_str(&custom_txt_end);
-    result
+    println!("인풋:{}", arg);
+        let result = String::from(arg);
+        println!("결과:{}", result);
+        result
 }
 
 use std::cmp::min;

@@ -104,6 +104,7 @@ fn parserhook(start:&str,end:&str,func:fn (arg:String) -> String, to_parse:&mut 
         } else if countin > 0 {
             if ch == start.chars().nth(i).unwrap() {
                 i += 1;
+                //countin - 1 = 문법 1번 진입 시 0
                 arg.push(ch);
                 if i == correct_size_start {
                     i = 0;
@@ -119,16 +120,15 @@ fn parserhook(start:&str,end:&str,func:fn (arg:String) -> String, to_parse:&mut 
                 arg.push(ch);
             } else if ch == end.chars().nth(grammari).unwrap() {
                 grammari += 1;
-                arg.push(ch);
+                arg.push(ch); //
                 if grammari == correct_size_end {
                     grammari = 0;
                     i = 0;
                     for _ in 0..correct_size_end {
                         arg.remove(arg.len()-1);
                     }
-                    
-                    argstmp[countin-1].push_str(&func(arg.clone()));
-                    arg = argstmp[countin-1].clone();
+                    argstmp[countin] = func(arg.clone());
+                    arg = argstmp[countin].clone();
                     countin -= 1;
                     if countin == 0 {
                         temp.push_str(&arg.as_str());
