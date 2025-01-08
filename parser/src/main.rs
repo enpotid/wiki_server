@@ -23,8 +23,9 @@ fn main() -> std::io::Result<()> {
         None
     };
     let mut hooks:Vec<ParserHook> = Vec::new();
+    mkgrammar_hook("{{{}}}", colored_txt::colored_txt, &mut hooks, "inline");
     mkgrammar_hook("{#ARG}", colored_txt::colored_txt, &mut hooks, "inline");
-    mkgrammar_hook("**ARG**", bold_txt, &mut hooks, "inline");
+    //mkgrammar_hook("**ARG**", bold_txt, &mut hooks, "inline");
     let (result, nowikilist) = nowiki(contents.clone());
     temp.push_str(result.as_str());
     temp2.push_str(parse(&mut temp, &hooks).as_str());
@@ -91,15 +92,13 @@ fn parserhook(start:&str,end:&str,func:fn (arg:String) -> String, to_parse:&mut 
     for ch in to_parse.chars() {
         if ch == start.chars().nth(i).unwrap() && countin == 0 {
             i += 1;
-            arg.push(ch);
+            temp.push(ch);
             if i == correct_size_start {
                 i = 0;
                 countin += 1;
                 for _ in 0..correct_size_start {
-                    arg.remove(arg.len()-1);
+                    temp.remove(temp.len()-1);
                 }
-                argstmp.push(arg.clone());
-                arg.clear();
             }
         } else if countin > 0 {
             if ch == start.chars().nth(i).unwrap() {
@@ -108,33 +107,51 @@ fn parserhook(start:&str,end:&str,func:fn (arg:String) -> String, to_parse:&mut 
                 arg.push(ch);
                 if i == correct_size_start {
                     i = 0;
-                    countin += 1;
+                    grammari = 0;
                     for _ in 0..correct_size_start {
                         arg.remove(arg.len()-1);
                     }
-                    argstmp.push(arg.clone());
+                    if argstmp.len() == countin-1 {
+                        argstmp.push(arg.clone());
+                    } else {
+                        argstmp[countin-1] = arg.clone();
+                    }
+                    countin += 1;
                     arg.clear();
+                }
+            } else if ch == end.chars().nth(grammari).unwrap() {
+                grammari += 1;
+                arg.push(ch);
+                if grammari == correct_size_end {
+                    countin -= 1;
+                    if countin == 0 {
+                        grammari = 0;
+                        i = 0;
+                        for _ in 0..correct_size_end {
+                            arg.remove(arg.len()-1);
+                        }
+                        temp.push_str(func(arg.clone()).as_str());
+                        if argstmp.len() != 0 {
+                            argstmp[0].clear();
+                        }
+                        arg.clear();
+                    } else {
+                        grammari = 0;
+                        i = 0;
+                        for _ in 0..correct_size_end {
+                            arg.remove(arg.len()-1);
+                        }
+                        argstmp[countin-1].push_str(func(arg.clone()).as_str());
+                        arg.clear();
+                        arg.push_str(&argstmp[countin-1]);
+                        if argstmp.len()-1 == countin {
+                            argstmp[countin].clear();
+                        }
+                    }
                 }
             } else if ch != start.chars().nth(i).unwrap() && i != 0{
                 i = 0;
                 arg.push(ch);
-            } else if ch == end.chars().nth(grammari).unwrap() {
-                grammari += 1;
-                arg.push(ch); //
-                if grammari == correct_size_end {
-                    grammari = 0;
-                    i = 0;
-                    for _ in 0..correct_size_end {
-                        arg.remove(arg.len()-1);
-                    }
-                    argstmp[countin] = func(arg.clone());
-                    arg = argstmp[countin].clone();
-                    countin -= 1;
-                    if countin == 0 {
-                        temp.push_str(&arg.as_str());
-                        argstmp[countin].clear();
-                    }
-                }
             } else if ch != start.chars().nth(grammari).unwrap() && grammari != 0{
                 grammari = 0;
                 arg.push(ch);
@@ -165,7 +182,7 @@ fn nowiki (string:String) -> (String, Vec<String>) {
                 brace_count-=1;
                 if brace_count == 0 {
                     num_of_nowiki += 1;
-                    result.push_str("NOWIKIㅇㅅㅇ");
+                    result.push_str("놄윒킶 읾싢 텏슭틆");
                     result.push_str(num_of_nowiki.to_string().as_str());
                     in_brace = false;
                 }
@@ -194,7 +211,7 @@ fn restore (nowikilist:Vec<String>, temp:&str) -> String {
     let mut result = String::from(temp);
     let mut i = 1;
     for value in nowikilist {
-        let mut nowikib: String = String::from("NOWIKIㅇㅅㅇ");
+        let mut nowikib: String = String::from("놄윒킶 읾싢 텏슭틆");
         let _nowiki = nowikib.push_str(i.to_string().as_str());
         result = result.replace(&nowikib, &value);
         i += 1;
