@@ -18,7 +18,7 @@ app.get(`/:docname`, (req, res) => {
 
 app.post(`/:docname`, async (req, res) => {
   let title = req.params.docname;
-  let body = req.body.body;
+  let body = req.body;
   const checkQuery = `SELECT 1 FROM doc WHERE title = $1`; // 동일한 title이 있는지 확인하는 쿼리
   const insertQuery = `INSERT INTO doc (title, body) VALUES ($1, $2)`; // 새로운 문서 추가 쿼리
   const updateQuery = `UPDATE doc SET body = $2, lastmodifiedtime = CURRENT_TIMESTAMP WHERE title = $1`;
