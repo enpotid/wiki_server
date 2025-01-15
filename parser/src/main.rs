@@ -1,10 +1,10 @@
-static mut A:bool = false;
-mod structs;
 mod inline_parser;
 mod short_parser;
 use std::fs;
 use inline_parser::inline_parser;
+use serde::{Deserialize, Serialize};
 use short_parser::short_parser;
+use warp::Filter;
 mod bold_txt;
 mod colored_txt;
 mod italic_txt;
@@ -14,29 +14,48 @@ struct ParserHook {
     function: fn(String) -> String,
     grammartype:String
 }
-fn main() -> std::io::Result<()> {
-    // 파일을 읽어들임
-    let mut temp: String = String::new();
-    let mut temp2: String = String::new();
-    let mut temp3: String = String::new();
-    let mut temp4: String = String::new();
-    let mut contents: String = fs::read_to_string("test.txt")?;
-    contents = contents.replace("<", "&lt;");
-    let mut hooks:Vec<ParserHook> = Vec::new();
-    mkgrammar_hook("{#ARG}", colored_txt::colored_txt, &mut hooks, "inline");
-    mkgrammar_hook("**ARG**", bold_txt::bold_txt, &mut hooks, "short");
-    mkgrammar_hook("*ARG*", italic_txt::italic_txt, &mut hooks, "short");
-    mkgrammar_hook("__ARG__", underlined_txt::underlined_txt, &mut hooks, "short");
-    mkgrammar_hook("--ARG--", italic_txt::italic_txt, &mut hooks, "short");
-    mkgrammar_hook("~~ARG~~", italic_txt::italic_txt, &mut hooks, "short");
-    let (result, nowikilist) = nowiki(contents.clone());
-    temp.push_str(result.as_str());
-    temp2.push_str(parse(&mut temp, &hooks).as_str());
-    temp3.push_str(escape_handler(&&temp2).as_str());
-    // 파일 내용에서 중괄호로 감싸진 부분만 추출하여 배열로 처리
-    temp4.push_str(restore(nowikilist,&&temp3).as_str());
-    println!("{}", temp4);
-    // 결과 출력
+#[derive(Debug, Deserialize, Serialize)]
+struct RequestData {
+    contents: String,
+}
+
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
+    // POST 요청에서 contents를 받는 endpoint를 설정합니다.
+    let post_route = warp::post()
+        .and(warp::path("process"))
+        .and(warp::body::json()) // JSON 형태로 데이터를 받음
+        .map(|data: RequestData| {
+            // 받은 contents를 처리하는 로직
+            let mut temp: String = String::new();
+            let mut temp2: String = String::new();
+            let mut temp3: String = String::new();
+            let mut temp4: String = String::new();
+            let mut contents = data.contents;
+            contents = contents.replace("<", "&lt;");
+            let mut hooks: Vec<ParserHook> = Vec::new();
+            mkgrammar_hook("{#ARG}", colored_txt::colored_txt, &mut hooks, "inline");
+            mkgrammar_hook("**ARG**", bold_txt::bold_txt, &mut hooks, "short");
+            mkgrammar_hook("*ARG*", italic_txt::italic_txt, &mut hooks, "short");
+            mkgrammar_hook("__ARG__", underlined_txt::underlined_txt, &mut hooks, "short");
+            mkgrammar_hook("--ARG--", italic_txt::italic_txt, &mut hooks, "short");
+            mkgrammar_hook("~~ARG~~", italic_txt::italic_txt, &mut hooks, "short");
+            let (result, nowikilist) = nowiki(contents.clone());
+            temp.push_str(result.as_str());
+            temp2.push_str(parse(&mut temp, &hooks).as_str());
+            temp3.push_str(escape_handler(&&temp2).as_str());
+            // 파일 내용에서 중괄호로 감싸진 부분만 추출하여 배열로 처리
+            temp4.push_str(restore(nowikilist, &&temp3).as_str());
+            
+            // 결과를 JSON 형식으로 반환
+            warp::reply::json(&temp4)
+        });
+
+    // 서버 실행
+    let addr = ([127, 0, 0, 1], 34879);
+    warp::serve(post_route)
+        .run(addr)
+        .await;
 
     Ok(())
 }

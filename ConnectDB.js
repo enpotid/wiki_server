@@ -1,10 +1,5 @@
 // 환경변수가 없으면 기본값 설정
 require("dotenv").config();
-const dbHost = process.env.DB_HOST || "localhost"; // DB_HOST가 없으면 'localhost' 사용
-const dbPort = process.env.DB_PORT || 5432; // DB_PORT가 없으면 5432 사용
-const dbUser = process.env.DB_USER || "defaultUser"; // DB_USER가 없으면 'defaultUser' 사용
-const dbPassword = process.env.DB_PASSWORD || "defaultPassword"; // DB_PASSWORD가 없으면 'defaultPassword' 사용
-const dbName = process.env.DB_DBNAME || "defaultDatabase"; // DB_DBNAME이 없으면 'defaultDatabase' 사용
 const { Pool } = require("pg");
 const sql = new Pool({
   host: process.env.DB_HOST,
@@ -24,11 +19,18 @@ async function ConnectDB() {
 }
 async function ChkTables() {
   let tables = [
+    { name: "namespace",
+      colums: [
+        { name: "name", type: "text", keys: ["primary"], notnull: true},
+        { name: "defaultacl", type: "text[]", default: "ARRAY['EVERYONE'::text]"}
+      ]
+    },
     {
       name: "doc",
       colums: [
-        { name: "title", type: "text", keys: ["primary"], notnull: true },
+        { name: "title", type: "text", notnull: true },
         { name: "body", type: "text", notnull: true },
+        { name: "namespace", type: "text", notnull: true},
         {
           name: "createdtime",
           type: "timestamp with time zone",
@@ -179,7 +181,6 @@ function Mk_tableQuery(table) {
       if (column.keys && column.keys.includes("primary")) {
         columnDefinition += " PRIMARY KEY";
       }
-
       return columnDefinition;
     })
     .join(",\n");

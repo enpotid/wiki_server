@@ -1,3 +1,11 @@
+//.env MUST CONTAIN
+//PORT=24879
+//DB_HOST="localhost"
+//DB_PORT=5432
+//DB_USER="postgres"
+//DB_PASSWORD="secret"
+//DB_DBNAME="wiki"
+//WIKINAME="wiki"
 const { insertDoc, updateDoc, ConnectDB, sql } = require("./ConnectDB");
 ConnectDB();
 const express = require("express");
