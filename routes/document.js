@@ -13,7 +13,7 @@ app.get(`/:namespace/:docname`, (req, res) => {
     }
 
     if (resdb.rows.length === 0) {
-      return res.status(404).send({ error: "Document not found" });
+      return res.status(404).send("Document not found");
     }
     const response = await axios.post('http://127.0.0.1:34879/process', JSON.parse(`{"contents":${JSON.stringify(resdb.rows[0].body).replace('"', '\"')}}`));
     res.send(response.data);

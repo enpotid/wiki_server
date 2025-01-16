@@ -2,12 +2,14 @@ pub fn inline_parser(start:&str,end:&str,func:fn (arg:String) -> String, to_pars
     let mut temp = String::new();
     let mut arg = String::new();
     let mut i = 0;
+    let mut index = 0;
     let mut grammari = 0;
     let mut countin:usize = 0;
     let correct_size_start = start.len();
     let correct_size_end = end.len();
     let mut argstmp:Vec<String> = Vec::new();
     for ch in to_parse.chars() {
+        index += 1;
         if ch == start.chars().nth(i).unwrap() && countin == 0 {
             i += 1;
             temp.push(ch);
@@ -70,6 +72,9 @@ pub fn inline_parser(start:&str,end:&str,func:fn (arg:String) -> String, to_pars
             } else if ch != start.chars().nth(grammari).unwrap() && grammari != 0{
                 grammari = 0;
                 arg.push(ch);
+            } else if index == to_parse.len() {
+                temp.push_str(&format!("{}{}", start, &arg));
+                break;
             } else {
                 arg.push(ch);
             }

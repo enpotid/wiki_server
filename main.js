@@ -11,9 +11,16 @@ ConnectDB();
 const express = require("express");
 const app = express();
 require("dotenv").config();
-const helmet = require("helmet");
 const document = require("./routes/document");
+const raw = require("./routes/raw");
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', '*');
+  res.setHeader('Access-Control-Allow-Headers', '*');
+  next();
+})
 app.use("/document/", document);
+app.use("/raw/", raw)
 
 app.listen(process.env.PORT, () => {
   console.log(`App listening on: ${process.env.PORT}`);
