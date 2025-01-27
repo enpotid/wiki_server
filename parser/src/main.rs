@@ -1,14 +1,26 @@
+use dotenv::dotenv;
+//.env MUST CONTAIN
+//IP1=127
+//IP2=127
+//IP3=127
+//IP4=127
+//PORT=24879
+use std::env;
+
 mod inline_parser;
 mod short_parser;
+mod line_parser;
 
 use inline_parser::inline_parser;
 use serde::{Deserialize, Serialize};
 use short_parser::short_parser;
+use line_parser::line_parser;
 use warp::Filter;
 mod bold_txt;
 mod colored_txt;
 mod italic_txt;
 mod underlined_txt;
+mod header_1;
 struct ParserHook {
     grammar:String,
     function: fn(String) -> String,
@@ -21,6 +33,7 @@ struct RequestData {
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
+    dotenv().ok();
     // POST 요청에서 contents를 받는 endpoint를 설정합니다.
     let post_route = warp::post()
         .and(warp::path("process"))
@@ -40,6 +53,7 @@ async fn main() -> std::io::Result<()> {
             mkgrammar_hook("__ARG__", underlined_txt::underlined_txt, &mut hooks, "short");
             mkgrammar_hook("--ARG--", italic_txt::italic_txt, &mut hooks, "short");
             mkgrammar_hook("~~ARG~~", italic_txt::italic_txt, &mut hooks, "short");
+            mkgrammar_hook("= ARG =", header_1::header_1, &mut hooks, "line");
             let (result, nowikilist) = nowiki(contents.clone());
             temp.push_str(result.as_str());
             temp2.push_str(parse(&mut temp, &hooks).as_str());
@@ -48,11 +62,12 @@ async fn main() -> std::io::Result<()> {
             temp4.push_str(restore(nowikilist, &&temp3).as_str());
             
             // 결과를 JSON 형식으로 반환
-            warp::reply::json(&temp4)
+            let temp5 = temp4.replace("\n", "<br />");
+            warp::reply::json(&temp5)
         });
 
     // 서버 실행
-    let addr = ([127, 0, 0, 1], 34879);
+    let addr: ([u8; 4], u16) = ([env::var("IP1").expect("IP1 환경변수가 비어있음").parse().expect("IP1이 U8이 아님"), env::var("IP2").expect("IP2 환경변수가 비어있음").parse().expect("IP2이 U8이 아님"), env::var("IP3").expect("IP3 환경변수가 비어있음").parse().expect("IP3이 U8이 아님"), env::var("IP4").expect("IP4 환경변수가 비어있음").parse().expect("IP4이 U8이 아님")], env::var("PORT").expect("PORT 환경변수가 비어있음").parse().expect("PORT이 U8이 아님"));
     warp::serve(post_route)
         .run(addr)
         .await;
@@ -100,6 +115,8 @@ fn parse (buf:&mut String, hookslist:&Vec<ParserHook>) -> String {
             inline_parser(start, end, hook.function, buff);
         } else if hook.grammartype == "short" {
             short_parser(start, end, hook.function, buff);
+        } else if hook.grammartype == "line" {
+            line_parser(start, end, hook.function, buff);
         } else {
             inline_parser(start, end, hook.function, buff);
         }

@@ -13,6 +13,7 @@ async function ConnectDB() {
   try {
     await sql.connect();
     await ChkTables();
+    await ChkDB();
   } catch (err) {
     throw err;
   }
@@ -45,7 +46,7 @@ async function ChkTables() {
       ],
     },
     {
-      name: "user",
+      name: "users",
       colums: [
         { name: "name", type: "text", keys: ["primary"], notnull: true },
         { name: "password", type: "text", notnull: true },
@@ -54,10 +55,16 @@ async function ChkTables() {
           type: "timestamp with time zone",
           default: "CURRENT_TIMESTAMP",
         },
-        { name: "groupin", type: "text" },
-        { name: "joinedgroupin", type: "timestamp with time zone" }, //사용자 기한 차단, 해당 그룹에 있었던 기간 조회용.
+        { name: "user_group", type: "json", default:`'[{"name":"user", "expire":"none"}]'::json` },
       ],
     },
+    {
+      name: "groups",
+      colums: [
+        { name:"name", type:"text", keys: ["primary"], notnull:true },
+        { name:"permissions", type:"json", default:`'["edit", "watch"]'::json`}
+      ]
+    }
   ];
   await Chk_logic(tables);
 }
@@ -78,6 +85,7 @@ async function Chk_logic(tables) {
         `${tableinfo.name}테이블이 존제하지 않습니다. 테이블을 만들겠습니다.`,
       );
       //해당 테이블 정보를 바탕으로 쿼리문을 생성해 실행
+      console.log(Mk_tableQuery(tableinfo))
       sql.query(Mk_tableQuery(tableinfo));
     }
   });
@@ -174,7 +182,7 @@ function Mk_tableQuery(table) {
 
       // 기본값 추가
       if (column.default) {
-        columnDefinition += ` DEFAULT ${column.default}`;
+        columnDefinition += ` DEFAULT ${column.default.replace("::json", "")}`;
       }
 
       // PRIMARY KEY 제약 조건 추가
@@ -187,5 +195,24 @@ function Mk_tableQuery(table) {
 
   createTableSQL += columnSQL + "\n)";
   return createTableSQL;
+}
+async function ChkDB() {
+  const res = await sql.query(`SELECT 1 FROM namespace WHERE name=$1`, [process.env.WIKINAME])
+  if (res.rowCount != 1) {
+    console.log("위키의 기본 이름공간이 존제하지 않습니다. 기본 이름공간을 만들겠습니다.")
+    await sql.query(`INSERT INTO namespace (name) VALUES ($1)`, [process.env.WIKINAME])
+  }
+  const res2 = await sql.query(`SELECT 1 FROM groups WHERE name=$1`, ["owner"])
+  if (res2.rowCount != 1) {
+    console.log("위키의 기본 사용자 그룹이 존제하지 않습니다. 기본 사용자 그룹을 만들겠습니다.")
+    await sql.query(`INSERT INTO groups (name, permissions) VALUES ($1, $2)`, ["owner", "[\"owner\"]"])
+    console.log(`위키를 처음 시작하시나요? http://localhost:${process.env.port}/config 에 접속하세요`)
+  }
+  const res3 = await sql.query(`SELECT 1 FROM groups WHERE name=$1`, ["user"])
+  if (res3.rowCount != 1) {
+    console.log("위키의 기본 사용자 그룹이 존제하지 않습니다. 기본 사용자 그룹을 만들겠습니다.")
+    await sql.query(`INSERT INTO groups (name, permissions) VALUES ($1, $2)`, ["user", "[\"edit\", \"watch\"]"])
+    console.log(`위키를 처음 시작하시나요? http://localhost:${process.env.port}/config 에 접속하세요`)
+  }
 }
 module.exports = { sql, ConnectDB };
