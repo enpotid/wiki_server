@@ -1,5 +1,5 @@
 require("dotenv").config();
-const axios = require('axios');
+const axios = require("axios");
 const express = require("express");
 const app = express.Router();
 const { sql } = require("../ConnectDB");
@@ -7,23 +7,34 @@ app.use(express.json());
 app.get(`/:namespace/:docname`, (req, res) => {
   let docname = req.params.docname;
   let namespace = req.params.namespace;
-  sql.query(`SELECT * FROM doc WHERE title=$1 AND namespace=$2`, [docname, namespace], async (err, resdb) => {
-    if (err) {
-      throw err;
-    }
+  sql.query(
+    `SELECT * FROM doc WHERE title=$1 AND namespace=$2`,
+    [docname, namespace],
+    async (err, resdb) => {
+      if (err) {
+        throw err;
+      }
 
-    if (resdb.rows.length === 0) {
-      return res.status(404).send("Document not found");
+      if (resdb.rows.length === 0) {
+        return res.status(404).send("Document not found");
+      }
+      const response = await axios.post(
+        process.env.PARSER_SERVER,
+        JSON.parse(
+          `{"contents":${JSON.stringify(resdb.rows[0].body).replace('"', '"')}}`
+        )
+      );
+      res.send(response.data);
     }
-    const response = await axios.post(process.env.PARSER_SERVER, JSON.parse(`{"contents":${JSON.stringify(resdb.rows[0].body).replace('"', '\"')}}`));
-    res.send(response.data);
-  });
+  );
 });
 
 app.post(`/:namespace/:docname`, async (req, res) => {
   let title = req.params.docname;
   let namespace = req.params.namespace;
-  const resp = await sql.query(`SELECT 1 FROM namespace WHERE name=$1`, [namespace],);
+  const resp = await sql.query(`SELECT 1 FROM namespace WHERE name=$1`, [
+    namespace,
+  ]);
   if (resp.rowCount == 0) {
     namespace = process.env.WIKINAME;
   }
@@ -42,7 +53,9 @@ app.post(`/:namespace/:docname`, async (req, res) => {
           if (err) {
             res.send("Failed To Update Doc");
           }
-          res.send(`문서 '${namespace}:${title}'가 성공적으로 업데이트되었습니다.`);
+          res.send(
+            `문서 '${namespace}:${title}'가 성공적으로 업데이트되었습니다.`
+          );
         });
       } else {
         // 동일한 title이 없다면 문서 추가
