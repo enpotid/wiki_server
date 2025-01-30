@@ -10,6 +10,7 @@
 const { insertDoc, updateDoc, ConnectDB, sql } = require("./ConnectDB");
 ConnectDB();
 const express = require("express");
+const session = require("express-session");
 const app = express();
 require("dotenv").config();
 const document = require("./routes/document");
@@ -17,7 +18,6 @@ const raw = require("./routes/raw");
 const register = require("./routes/register");
 const login = require("./routes/login");
 const getuserinfo = require("./routes/getuserinfo");
-const search = require("./routes/search");
 const session = require("express-session");
 const { spawn } = require("child_process");
 /*const parser = spawn('parser.exe');
@@ -45,7 +45,6 @@ app.use("/document/", document);
 app.use("/raw/", raw);
 app.use("/register/", register);
 app.use("/login/", login);
-app.use("/search/", search);
 app.use("/getuserinfo/", getuserinfo);
 app.listen(process.env.PORT, () => {
   console.log(`App listening on: ${process.env.PORT}`);

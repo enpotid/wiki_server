@@ -23,7 +23,7 @@ async function ChkTables() {
     { name: "namespace",
       colums: [
         { name: "name", type: "text", keys: ["primary"], notnull: true},
-        { name: "defaultacl", type: "text[]", default: "ARRAY['EVERYONE'::text]"}
+        { name: "defaultacl", type: "json", default: "'{\"watch\":[\"everyone\"], \"edit\":[\"everyone\"]}'::json"}
       ]
     },
     {
@@ -42,7 +42,7 @@ async function ChkTables() {
           type: "timestamp with time zone",
           default: "CURRENT_TIMESTAMP",
         },
-        { name: "acl", type: "text[]", default: "ARRAY['EVERYONE'::text]" },
+        { name: "acl", type: "json", default: "'{\"watch\":[\"everyone\"], \"edit\":[\"everyone\"]}'::json" },
       ],
     },
     {
@@ -56,6 +56,7 @@ async function ChkTables() {
           default: "CURRENT_TIMESTAMP",
         },
         { name: "user_group", type: "json", default:`'[{"name":"user", "expire":"none"}]'::json` },
+        { name: "setting", type: "json", default:`'{}'::json` },
       ],
     },
     {

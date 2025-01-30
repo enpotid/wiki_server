@@ -5,7 +5,7 @@ app.get(`/`, async (req, res) => {
     if (req.session.info == undefined) {
         res.send(JSON.stringify({message:"not logined"}))
     } else {
-        res.send({name:req.session.info.name, createdtime:req.session.info.createdtime})
+        res.send({info:req.session.info})
     }
 });
 module.exports = app;
