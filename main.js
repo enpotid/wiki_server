@@ -19,7 +19,6 @@ const register = require("./routes/register");
 const search = require("./routes/search");
 const login = require("./routes/login");
 const getuserinfo = require("./routes/getuserinfo");
-const session = require("express-session");
 const { spawn } = require("child_process");
 /*const parser = spawn('parser.exe');
 parser.stdout.on('data', (data) => {
