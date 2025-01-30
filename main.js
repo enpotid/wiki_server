@@ -16,6 +16,7 @@ require("dotenv").config();
 const document = require("./routes/document");
 const raw = require("./routes/raw");
 const register = require("./routes/register");
+const search = require("./routes/search");
 const login = require("./routes/login");
 const getuserinfo = require("./routes/getuserinfo");
 const session = require("express-session");
@@ -46,6 +47,7 @@ app.use("/raw/", raw);
 app.use("/register/", register);
 app.use("/login/", login);
 app.use("/getuserinfo/", getuserinfo);
+app.use("/search/", search);
 app.listen(process.env.PORT, () => {
   console.log(`App listening on: ${process.env.PORT}`);
 });
