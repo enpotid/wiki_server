@@ -17,7 +17,6 @@ app.post(`/`, async (req, res) => {
     res.send("wrong");
   } else {
     req.session.info = resp.rows[0];
-    req.session.candowiththisdoc = candowiththisdoc({"watch":[{"condition":"everyone","allow":false}], "edit":[{"condition":"everyone","allow":true}]},resp.rows[0].user_group)
     res.send("suc");
   }
 });

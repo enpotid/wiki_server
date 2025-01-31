@@ -2,31 +2,35 @@ require("dotenv").config();
 const axios = require("axios");
 const express = require("express");
 const app = express.Router();
+const {candowiththisdoc} = require("../usermanager")
 const { sql } = require("../ConnectDB");
 app.use(express.json());
-app.get(`/:namespace/:docname`, (req, res) => {
+app.get(`/:namespace/:docname`, async (req, res) => {
   let docname = req.params.docname;
   let namespace = req.params.namespace;
-  sql.query(
-    `SELECT * FROM doc WHERE title=$1 AND namespace=$2`,
-    [docname, namespace],
-    async (err, resdb) => {
-      if (err) {
-        throw err;
-      }
-
-      if (resdb.rows.length === 0) {
-        return res.status(404).send("Document not found");
-      }
-      const response = await axios.post(
-        process.env.PARSER_SERVER,
-        JSON.parse(
-          `{"contents":${JSON.stringify(resdb.rows[0].body).replace('"', '"')}}`
-        )
-      );
-      res.send(response.data);
-    }
-  );
+  let canwatch = false;
+  const documentinfo = await sql.query(`SELECT * FROM doc WHERE title=$1 AND namespace=$2`, [docname, namespace])
+  if (documentinfo.rowCount === 0) {return res.status(404).send("Document not found");}
+  let documentACL = documentinfo.rows[0].acl;
+  if (req.session.info == undefined) {
+    console.log("not login")
+    canwatch = await candowiththisdoc(documentACL, [{"name":"user", "expire":"none"}])
+  } else {
+    canwatch = (await candowiththisdoc(documentACL, req.session.info.user_group))
+  }
+  console.log(canwatch.watch)
+  if (canwatch.watch) {
+        const response = await axios.post(
+          process.env.PARSER_SERVER,
+          JSON.parse(
+            `{"contents":${JSON.stringify(documentinfo.rows[0].body).replace('"', '"')}}`
+          )
+        );
+        res.send(response.data);
+  } else {
+    res.send("No perms")
+  }
+  
 });
 
 app.post(`/:namespace/:docname`, async (req, res) => {
