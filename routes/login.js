@@ -3,6 +3,7 @@ const app = express.Router();
 const { sql } = require("../ConnectDB");
 const CryptoJS = require("crypto-js");
 const SHA256 = require("crypto-js/sha256");
+const { candowiththisdoc } = require("../usermanager")
 app.use(express.json());
 app.post(`/`, async (req, res) => {
   let password = SHA256(req.body.password + process.env.SECRET).toString(
@@ -16,8 +17,8 @@ app.post(`/`, async (req, res) => {
     res.send("wrong");
   } else {
     req.session.info = resp.rows[0];
+    req.session.candowiththisdoc = candowiththisdoc({"watch":[{"condition":"everyone","allow":false}], "edit":[{"condition":"everyone","allow":true}]},resp.rows[0].user_group)
     res.send("suc");
-    console.log("suc");
   }
 });
 module.exports = app;

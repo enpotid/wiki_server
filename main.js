@@ -17,6 +17,7 @@ const document = require("./routes/document");
 const raw = require("./routes/raw");
 const register = require("./routes/register");
 const search = require("./routes/search");
+const setting = require("./routes/setting");
 const login = require("./routes/login");
 const getuserinfo = require("./routes/getuserinfo");
 const { spawn } = require("child_process");
@@ -47,6 +48,7 @@ app.use("/register/", register);
 app.use("/login/", login);
 app.use("/getuserinfo/", getuserinfo);
 app.use("/search/", search);
+app.use("/setting/", setting);
 app.listen(process.env.PORT, () => {
   console.log(`App listening on: ${process.env.PORT}`);
 });

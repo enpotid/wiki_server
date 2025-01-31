@@ -12,7 +12,7 @@ app.get(`/:namespace/:docname`, (req, res) => {
         throw err;
       }
       if (resdb.rows.length === 0) {
-        return res.status(404).send("Document not found");
+        return res.status(404).json({body:"Not Found"});
       }
       res.json({
         title: resdb.rows[0].title,

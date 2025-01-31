@@ -42,7 +42,7 @@ async function ChkTables() {
           type: "timestamp with time zone",
           default: "CURRENT_TIMESTAMP",
         },
-        { name: "acl", type: "json", default: "'{\"watch\":[\"everyone\"], \"edit\":[\"everyone\"]}'::json" },
+        { name: "acl", type: "json", default: "'{\"watch\":[{\"condition\":\"everyone\",\"allow\":true}], \"edit\":[{\"condition\":\"everyone\",\"allow\":true}]}'::json" },
       ],
     },
     {
@@ -63,7 +63,7 @@ async function ChkTables() {
       name: "groups",
       colums: [
         { name:"name", type:"text", keys: ["primary"], notnull:true },
-        { name:"permissions", type:"json", default:`'["edit", "watch"]'::json`}
+        { name:"permissions", type:"json", default:`'["+edit", "+watch"]'::json`}
       ]
     }
   ];

@@ -6,6 +6,7 @@ app.post(`/`, async (req, res) => {
     let body = req.body;
     if (req.session.info == undefined) {
         res.send("not login")
+        console.log("test")
     } else {
         let name = req.session.info.name;
         await sql.query(`UPDATE users SET setting=$1 WHERE name=$2`, [body, name])
