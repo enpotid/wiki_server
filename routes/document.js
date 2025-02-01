@@ -18,7 +18,6 @@ app.get(`/:namespace/:docname`, async (req, res) => {
   } else {
     canwatch = (await candowiththisdoc(documentACL, req.session.info.user_group))
   }
-  console.log(canwatch.watch)
   if (canwatch.watch) {
         const response = await axios.post(
           process.env.PARSER_SERVER,

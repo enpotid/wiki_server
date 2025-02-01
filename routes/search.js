@@ -5,7 +5,7 @@ app.use(express.json());
 app.get(`/:keyword`, async (req, res) => {
   let keyword = req.params.keyword;
 
-  await sql.query(`SELECT title FROM doc`, async (err, resdb) => {
+  sql.query(`SELECT title FROM doc`, async (err, resdb) => {
     if (err) {
       throw err;
     }
