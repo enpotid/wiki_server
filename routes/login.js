@@ -3,7 +3,7 @@ const app = express.Router();
 const { sql } = require("../ConnectDB");
 const CryptoJS = require("crypto-js");
 const SHA256 = require("crypto-js/sha256");
-const { candowiththisdoc } = require("../usermanager")
+const { getuserpermission } = require("../usermanager")
 app.use(express.json());
 app.post(`/`, async (req, res) => {
   let password = SHA256(req.body.password + process.env.SECRET).toString(
@@ -17,6 +17,8 @@ app.post(`/`, async (req, res) => {
     res.send("wrong");
   } else {
     req.session.info = resp.rows[0];
+    req.session.save((err) => {if (err) {throw err;}})
+    req.session.info.perms = getuserpermission(req.session.info.user_group)
     res.send("suc");
   }
 });
