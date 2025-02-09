@@ -21,6 +21,7 @@ const setting = require("./routes/setting");
 const login = require("./routes/login");
 const getuserinfo = require("./routes/getuserinfo");
 const candowiththisdoc = require("./routes/candowiththisdoc");
+const random = require("./routes/random");
 const { spawn } = require("child_process");
 /*const parser = spawn('parser.exe');
 parser.stdout.on('data', (data) => {
@@ -51,6 +52,7 @@ app.use("/getuserinfo/", getuserinfo);
 app.use("/search/", search);
 app.use("/setting/", setting);
 app.use("/candowiththisdoc/", candowiththisdoc)
+app.use("/random/", random)
 app.listen(process.env.PORT, () => {
   console.log(`App listening on: ${process.env.PORT}`);
 });
