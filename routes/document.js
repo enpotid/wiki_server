@@ -35,6 +35,7 @@ app.get(`/:namespace/:docname`, async (req, res) => {
 app.post(`/:namespace/:docname`, async (req, res) => {
   let title = req.params.docname;
   let namespace = req.params.namespace;
+  let body = req.body.body;
   let user_groups = [{name:"user"}];
   if (req.session.info != undefined) {
     user_groups = req.session.info.user_group
@@ -62,8 +63,7 @@ app.post(`/:namespace/:docname`, async (req, res) => {
             res.send("No Perms")
           }
         } else {
-          let body = req.body.body;
-          if ((await candowiththisdoc(docinfo.rows[0].acl, user_groups, req)).watch == true) {
+          if ((await candowiththisdoc(docinfo.rows[0].acl, user_groups, req)).edit == true) {
             sql.query(updateQuery, [title, body, namespace], (err, _res) => {
               if (err) {
                 res.send("Failed To Update Doc");

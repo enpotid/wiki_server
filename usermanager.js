@@ -64,11 +64,7 @@ async function candowiththisdoc (doc_acl, user_groups, req) {
             if (perms.includes(" owner ")) {
                 can_acl = true
             } else if (condition == "everyone") {
-                if (perms.includes(" acl ")) {
                     can_acl = allow
-                } else {
-                    can_acl = !allow
-                }
             } else {
                 if (parseACL(condition, req) == true) {
                     can_edit = allow

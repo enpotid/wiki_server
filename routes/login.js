@@ -18,7 +18,8 @@ app.post(`/`, async (req, res) => {
   } else {
     req.session.info = resp.rows[0];
     req.session.save((err) => {if (err) {throw err;}})
-    req.session.info.perms = getuserpermission(req.session.info.user_group)
+    req.session.info.perms = await getuserpermission(req.session.info.user_group)
+    req.session.save((err) => {if (err) {throw err;}})
     res.send("suc");
   }
 });
