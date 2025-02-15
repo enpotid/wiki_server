@@ -13,19 +13,22 @@ app.get(`/:namespace/:docname`, async (req, res) => {
   if (documentinfo.rowCount === 0) {return res.status(404).send("Document not found");}
   let documentACL = documentinfo.rows[0].acl;
   if (req.session.info == undefined) {
-    console.log("not login")
     canwatch = await candowiththisdoc(documentACL, [{"name":"user", "expire":"none"}], req)
   } else {
     canwatch = await candowiththisdoc(documentACL, req.session.info.user_group, req)
   }
   if (canwatch.watch) {
-        const response = await axios.post(
-          process.env.PARSER_SERVER,
-          JSON.parse(
-            `{"contents":${JSON.stringify(documentinfo.rows[0].body).replace('"', '"')}}`
-          )
-        );
-        res.send(response.data);
+    try {
+      const response = await axios.post(
+        process.env.PARSER_SERVER,
+        JSON.parse(
+          `{"contents":${JSON.stringify(documentinfo.rows[0].body).replace('"', '"')}}`
+        )
+      );
+      res.send(response.data);
+    } catch(err) {
+      res.send("Parser server not working Σ(っ °Д °<span style='color:red;'>;</span>)っ connect to server administrator")
+    }    
   } else {
     res.send("No perms")
   }

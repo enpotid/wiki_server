@@ -23,14 +23,14 @@ async function ChkTables() {
     { name: "namespace",
       colums: [
         { name: "name", type: "text", keys: ["primary"], notnull: true},
-        { name: "defaultacl", type: "json", default: "'{\"watch\":[\"everyone\"], \"edit\":[\"everyone\"]}'::json"}
+        { name: "defaultacl", type: "json", default: "'{\"watch\":[{\"condition\":\"everyone\",\"allow\":true}], \"edit\":[{\"condition\":\"everyone\",\"allow\":true}]}'::json"}
       ]
     },
     {
       name: "doc",
       colums: [
         { name: "title", type: "text", notnull: true },
-        { name: "body", type: "text", notnull: true },
+        { name: "body", type: "text" },
         { name: "namespace", type: "text", notnull: true},
         {
           name: "createdtime",
@@ -43,6 +43,8 @@ async function ChkTables() {
           default: "CURRENT_TIMESTAMP",
         },
         { name: "acl", type: "json", default: "'{\"watch\":[{\"condition\":\"everyone\",\"allow\":true}], \"edit\":[{\"condition\":\"everyone\",\"allow\":true}]}'::json" },
+        { name: "lastrev", type: "integer", default: "0" },
+        { name:"log", type:"text"}
       ],
     },
     {
@@ -64,6 +66,18 @@ async function ChkTables() {
       colums: [
         { name:"name", type:"text", keys: ["primary"], notnull:true },
         { name:"permissions", type:"json", default:`'["+edit", "+watch"]'::json`}
+      ]
+    },
+    {
+      name: "history",
+      colums: [
+        { name:"namespace", type:"text", notnull:true },
+        { name:"document", type:"text", notnull:true},
+        { name:"rev", type:"integer", notnull:true},
+        { name:"hidden", type:"boolean", notnull:true, default:"false"},
+        { name:"body", type:"text"},
+        { name:"log", type:"text"},
+        { name:"modifiedtime", type:"timestamp with time zone", notnull:true}
       ]
     }
   ];

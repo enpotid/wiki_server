@@ -9,6 +9,7 @@
 //PARSER_SERVER="127.0.0.1:348790/process" This must be same with parser_server's setting
 const { insertDoc, updateDoc, ConnectDB, sql } = require("./ConnectDB");
 ConnectDB();
+//initmeili();
 const express = require("express");
 const session = require("express-session");
 const app = express();
@@ -24,6 +25,7 @@ const candowiththisdoc = require("./routes/candowiththisdoc");
 const random = require("./routes/random");
 const logout = require("./routes/logout");
 const { spawn } = require("child_process");
+//const { initmeili } = require("./meili");
 /*const parser = spawn('parser.exe');
 parser.stdout.on('data', (data) => {
   console.log(`[parser] ${data}`);

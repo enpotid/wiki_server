@@ -1,30 +1,24 @@
 const {sql} = require("./ConnectDB")
 const {parseACL} = require("./aclparser")
 async function candowiththisdoc (doc_acl, user_groups, req) {
-    let can_watch = false;
-    let can_edit = false;
-    let can_acl = false;
     const perms = await getuserpermission(user_groups);
-    let acl_watch = doc_acl.watch; //음 난 조졌다.
+    let acl_watch = doc_acl.watch;
     let acl_edit = doc_acl.edit;
     let acl_acl = doc_acl.acl;
-    if (acl_watch == undefined) {
-        if (perms.includes(" owner ")) {
-            can_watch = true;
+    let can_watch = bypassowner(doc_acl.watch);
+    let can_edit = bypassowner(doc_acl.edit);
+    let can_acl = bypassowner(doc_acl.acl);
+    function bypassowner (docacl) {
+        if (docacl == undefined || docacl.length == 0) {
+            if (perms.includes(" owner ")) {
+                return true;
+            }
+            return false;
         } else {
-            can_watch = false;
-        }
-    } else if (acl_edit == undefined) {
-        if (perms.includes(" owner ")) {
-            can_edit = true;
-        } else {
-            can_edit = false;
-        }
-    } else if (acl_acl == undefined) {
-        if (perms.includes(" owner ")) {
-            can_acl = true;
-        } else {
-            can_acl = false
+            if (perms.includes(" owner ")) {
+                return true;
+            }
+            return true;
         }
     }
     if (acl_watch != undefined) {
@@ -34,10 +28,12 @@ async function candowiththisdoc (doc_acl, user_groups, req) {
             if (perms.includes(" owner ")) {
                 can_watch = true
             } else if (condition == "everyone") {
-                    can_watch = allow
+                    can_watch = allow && can_watch
             } else {
                 if (parseACL(condition, req) == true) {
                     can_watch = allow
+                } else {
+                    can_watch = !allow && can_watch
                 }
             }
         })
@@ -49,10 +45,12 @@ async function candowiththisdoc (doc_acl, user_groups, req) {
             if (perms.includes(" owner ")) {
                 can_edit = true
             } else if (condition == "everyone") {
-                    can_edit = allow
+                    can_edit = allow && can_edit
             } else {
                 if (parseACL(condition, req) == true) {
-                    can_edit = allow
+                    can_edit = allow && can_edit
+                } else {
+                    can_edit = !allow && can_edit
                 }
             }
         })
@@ -64,10 +62,12 @@ async function candowiththisdoc (doc_acl, user_groups, req) {
             if (perms.includes(" owner ")) {
                 can_acl = true
             } else if (condition == "everyone") {
-                    can_acl = allow
+                    can_acl = allow && can_acl
             } else {
                 if (parseACL(condition, req) == true) {
-                    can_edit = allow
+                    can_acl = allow && can_acl
+                } else {
+                    can_acl = !allow && can_acl
                 }
             }
         })   
