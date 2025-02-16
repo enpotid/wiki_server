@@ -1,26 +1,12 @@
 const express = require("express");
 const app = express.Router();
 const { sql } = require("../ConnectDB");
+const { meili } = require("../meili");
 app.use(express.json());
 app.get(`/:keyword`, async (req, res) => {
   let keyword = req.params.keyword;
-
-  sql.query(`SELECT namespace,title FROM doc`, async (err, resdb) => {
-    if (err) {
-      throw err;
-    }
-    if (resdb.rows.length === 0) {
-      return res.status(404).send("No document");
-    }
-    let slist = [];
-    for (let i of resdb.rows) {
-      let ir = i.title.replace(/\s+/g, "").toLowerCase();
-      let kr = keyword.replace(/\s+/g, "").toLowerCase();
-      if (ir.includes(kr)) {
-        slist.push({title:i.title,namespace:i.namespace});
-      }
-    }
-    res.json({ body: slist });
-  });
+  const index = meili.index(process.env.WIKINAME)
+  const result = await index.search(keyword)
+  res.json({body:result.hits})
 });
 module.exports = app;

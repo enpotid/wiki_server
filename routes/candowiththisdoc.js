@@ -25,7 +25,6 @@ app.get("/:namespace/:document/", async (req, res) => {
             }
             documentACL[action] = documentACL[action].concat(acl)
         })
-        console.log(documentACL)
         if (req.session.info == undefined) {
             res.json(await candowiththisdoc(documentACL, [{"name":"user", "expire":"none"}], req))
         } else {

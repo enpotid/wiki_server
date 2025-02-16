@@ -4,6 +4,9 @@ const express = require("express");
 const app = express.Router();
 const {candowiththisdoc} = require("../usermanager")
 const { sql } = require("../ConnectDB");
+const { meili } = require("../meili");
+const SHA256 = require("crypto-js/sha256");
+const CryptoJS = require("crypto-js");
 app.use(express.json());
 app.get(`/:namespace/:docname`, async (req, res) => {
   let docname = req.params.docname;
@@ -52,6 +55,7 @@ app.post(`/:namespace/:docname`, async (req, res) => {
   const checkQuery = `SELECT * FROM doc WHERE title = $1 AND namespace=$2`; // 동일한 title이 있는지 확인하는 쿼리
   const insertQuery = `INSERT INTO doc (title, body, namespace) VALUES ($1, $2, $3)`; // 새로운 문서 추가 쿼리
   const updateQuery = `UPDATE doc SET body = $2, lastmodifiedtime = CURRENT_TIMESTAMP WHERE title = $1 AND namespace = $3`;
+  const index = meili.index(process.env.WIKINAME)
   try {
     // 동일한 title이 존재하는지 확인
     sql.query(checkQuery, [title, namespace], async (err, docinfo) => {
@@ -67,10 +71,14 @@ app.post(`/:namespace/:docname`, async (req, res) => {
           }
         } else {
           if ((await candowiththisdoc(docinfo.rows[0].acl, user_groups, req)).edit == true) {
-            sql.query(updateQuery, [title, body, namespace], (err, _res) => {
+            sql.query(updateQuery, [title, body, namespace], async (err, _res) => {
               if (err) {
                 res.send("Failed To Update Doc");
               }
+              let id = SHA256(namespace+":"+title).toString(
+                CryptoJS.enc.Hex
+              );
+              const response = await index.addDocuments([{id:id,title:title,namespace:namespace,prettytitle:namespace+":"+title, content:body}])
               res.send(
                 `문서 '${namespace}:${title}'가 성공적으로 업데이트되었습니다.`
               );
@@ -81,7 +89,12 @@ app.post(`/:namespace/:docname`, async (req, res) => {
         }
       } else {
         // 동일한 title이 없다면 문서 추가
+        const index = meili.index(process.env.WIKINAME)
         sql.query(insertQuery, [title, body, namespace]);
+        let id = SHA256(namespace+":"+title).toString(
+          CryptoJS.enc.Hex
+        );
+        const response = await index.addDocuments([{id:id,title:title,namespace:namespace,prettytitle:namespace+":"+title, content:body}])
         res.send(`문서 '${title}'가 성공적으로 추가되었습니다.`);
       }
     });
