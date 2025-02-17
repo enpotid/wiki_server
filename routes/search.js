@@ -6,7 +6,8 @@ app.use(express.json());
 app.get(`/:keyword`, async (req, res) => {
   let keyword = req.params.keyword;
   const index = meili.index(process.env.WIKINAME)
-  const result = await index.search(keyword)
-  res.json({body:result.hits})
+  index.updateSearchableAttributes(["prettytitle", "title"])
+  const results = await index.search(keyword);
+  res.json({body:results.hits})
 });
 module.exports = app;
