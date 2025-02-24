@@ -1,6 +1,6 @@
-use std::ptr::null;
+use std::{io::{stdin, stdout, Write}, ptr::null, result};
 
-use fancy_regex::Regex;
+use fancy_regex::{Captures, Regex};
 use warp::filters::method::head;
 pub fn parse (contents:&str) -> std::string::String {
     let mut rendered =String::from(contents);
@@ -9,7 +9,10 @@ pub fn parse (contents:&str) -> std::string::String {
 }
 pub fn parse_first(contents:&str, buffer:&mut String) {
     parse_comment(buffer);
+    parse_triple(buffer);
     parse_header(buffer);
+    parse_backslash(buffer);
+    *buffer = buffer.replace("[펼접]", "[ 펼치기 · 접기 ]")
 }
 fn parse_header(buffer:&mut String) {
     let re = Regex::new(r"\n((={1,6})(#?) ?([^\n]+) \3\2)\n").unwrap();
@@ -63,4 +66,97 @@ fn parse_comment (buffer:&mut String) {
     for capture in result {
         *buffer = buffer.replace(capture.unwrap().get(0).unwrap().as_str(), "")
     }
+}
+fn parse_triple (buffer:&mut String) {
+    //전에 만들었던 inline_parser쓰는것이 성능이 더 좋을수도. 재귀 쓸꺼임
+    let mut binding = buffer.clone();
+    /*for a in nowiki(&binding.clone()) {
+        let slice = &a[3..a.len()-3];
+        let mut res = String::new();
+        for ch in slice.chars() {
+            res.push_str("\\");
+            res.push(ch);
+        }
+        binding = binding.replacen(&a, &res, 1)
+    }*/
+
+    let mut looploop = true; //와 개떡같은 제귀의 시작!
+    while looploop == true {
+        let binddddddddddding = binding.clone();
+        let re = Regex::new(r"\{\{\{#!(((?!{{{|}}}|\s).|\n)*)(\s(((?!{{{|}}}).|\n)*))\}\}\}").unwrap();
+        let result = re.captures_iter(&binddddddddddding);
+        //let fucked = true wow
+        looploop = false;
+        for captures in result {
+            let cap = captures.unwrap();
+            stdout().flush();
+            let triplename = cap.get(1).unwrap().as_str();
+            if triplename == "wiki" {
+                triple_wiki(cap.get(0).unwrap().as_str(), cap.get(3).unwrap().as_str(), &mut binding, true/*나중에 바꿀 예정... 근데 개귀찮 */);
+            } else if triplename == "folding" {
+                triple_folding(cap.get(0).unwrap().as_str(), cap.get(3).unwrap().as_str(), &mut binding)
+            } else if triplename == "math" {
+
+            } else if triplename == "light" {
+
+            } else if triplename == "dark" {
+
+            } else {
+                binding = binding.replacen(cap.get(0).unwrap().as_str(), cap.get(0).unwrap().as_str().replace("{{{", "\\{\\{\\{").as_str(), 1);
+                binding = binding.replacen(cap.get(0).unwrap().as_str(), cap.get(0).unwrap().as_str().replace("}}}", "\\}\\}\\}").as_str(), 1);
+            }
+            looploop = true
+        }
+    }
+    *buffer = binding;
+}
+fn triple_wiki (full:&str, content:&str, buffer:&mut String, isdark:bool) {
+    let (attr, body) = content.split_once("\n").unwrap_or_default();
+    let mut style = "";
+    let mut atttr = String::from(" ");
+    atttr.push_str(attr);
+    atttr = atttr.replace("파서따움표", "\\파\\서\\따\\움\\표");
+    atttr = atttr.replace("\"", "파서따움표"); //정규식에 " 못넣드라. 왜???
+    let re = Regex::new(r" style=파서따움표(.*)파서따움표").unwrap();
+    let result = re.captures(&atttr).unwrap();
+        if !result.is_none() {
+            style = result.unwrap().get(1).unwrap().as_str();
+        }
+    if isdark == true {
+        let re = Regex::new(r" dark-style=&quot([^\n|^&quot]+)&quot ").unwrap();
+        let result = re.captures(&atttr).unwrap();
+        if !result.is_none() {
+            style = result.unwrap().get(1).unwrap().as_str();
+        }
+    }
+    *buffer = buffer.replacen(full, format!("<div style=\"{}\">{}</div>", style, body).as_str(), 1); 
+}
+fn triple_folding (full:&str, content:&str, buffer:&mut String) {
+    let (title, body) = content.split_once("\n").unwrap_or_default();
+    *buffer = buffer.replacen(full, format!("<dl><dt style=\"cursor: pointer;\" onclick=\"toggleDD()\">{}</dt><dd style=\"display:none\">{}</dd></dl>", title, body).as_str(), 1); 
+}
+fn nowiki(input: &str) -> Vec<String> {
+    let result: Vec<String> =  Vec::new();
+    result
+    //뭐 나중에 구현할 예정
+}
+fn parse_backslash(buffer:&mut String) {
+    let mut result = String::new();
+    let mut chars = buffer.chars().peekable();
+
+    while let Some(c) = chars.next() {
+        if c == '\\' {
+            if let Some(&next_char) = chars.peek() {
+                if next_char == '\\' {
+                    result.push(c);  // '\\'은 그대로 추가
+                    chars.next();  // '\\' 뒤에 또 하나의 '\\' 처리
+                } else {
+                    continue;  // 뒤에 문자가 있으면 해당 문자만 추가, 백슬래시 제거
+                }
+            }
+        } else {
+            result.push(c);
+        }
+    }
+    *buffer = result
 }
