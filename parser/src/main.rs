@@ -6,7 +6,7 @@ use dotenv::dotenv;
 //IP4=127
 //PORT=24879
 use std::env;
-mod parse_bora;
+mod parse_namumark;
 use serde::{Deserialize, Serialize};
 use warp::Filter;
 #[derive(Debug, Deserialize, Serialize)]
@@ -24,7 +24,7 @@ async fn main() -> std::io::Result<()> {
         .map(|data: RequestData| {
             // 받은 contents를 처리하는 로직
             let contents = data.contents;
-            let parsed = parse_bora::parse(&format!("\n{}\n", &contents));
+            let parsed = parse_namumark::parse(&format!("\n{}\n", &contents));
             warp::reply::json(&parsed)
         });
 
