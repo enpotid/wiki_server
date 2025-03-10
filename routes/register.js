@@ -5,7 +5,6 @@ const app = express.Router();
 const { sql } = require("../ConnectDB");
 app.use(express.json());
 app.post(`/`, async (req, res) => {
-  console.log(process.env.SECRET);
   let body = req.body;
   let password = SHA256(body.password + process.env.SECRET).toString(
     CryptoJS.enc.Hex

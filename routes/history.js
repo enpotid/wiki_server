@@ -1,35 +1,44 @@
 const express = require("express");
 const { sql } = require("../ConnectDB");
 const { candowiththisdoc } = require("../usermanager");
+const { default: axios } = require("axios");
 const app = express.Router();
 app.get(`/:namespace/:document/:rev`, async (req, res) => {
     let namespace = req.params.namespace;
     let document = req.params.document;
     let rev = req.params.rev
-    const resp = await sql.query(`SELECT * from history WHERE namespace=$1 AND document=$2 AMD rev=$3`, [namespace, document, rev])
-    const for_acl = await sql.query(`SELECT * from doc WHERE namespace=$1 AND document=$2`, [namespace, document])
+    const resp = await sql.query(`SELECT * from history WHERE namespace=$1 AND title=$2 AND rev=$3`, [namespace, document, rev])
+    const for_acl = await sql.query(`SELECT * from doc WHERE namespace=$1 AND title=$2`, [namespace, document])
+    console.log(resp.rowCount)
     if (resp.rowCount == 0) {
-        res.send("not found")
+        res.status(404).json({message:"not found"})
     } else {
-        if (req.session.info != undefined) {
-            if (resp.rows[0].hidden) {
-                if (req.session.info.perms.includes(" owner ") || req.session.info.perms.includes(" hide_rev ") ) {
-                    res.json({message:"suc", body:resp.rows[0].body, log:resp.rows[0].log, hidden:resp.rows[0].log, modifiedtime:resp.rows[0].modifiedtime})
+        if (resp.rows[0].hidden) {
+            if (req.session.info != undefined) {
+                if (req.session.info.permission.includes("owner") || req.session.info.perms.includes("hide_rev") ) {
+                    const response = await axios.post(
+                        process.env.PARSER_SERVER,
+                        JSON.parse(
+                          `{"contents":${JSON.stringify(resp.rows[0].body).replace('"', '"')}}`
+                        )
+                      );
+                    res.json({message:"suc", body:response.data, log:resp.rows[0].log, hidden:resp.rows[0].log, modifiedtime:resp.rows[0].modifiedtime})
                 } else {
                     res.json({message:"no perms"})
                 }
             } else {
-                let candowiththisdic = await candowiththisdoc(for_acl.rows[0].acl, req.session.info.user_group)
-                if (candowiththisdic.watch == true) {
-                    res.json({message:"suc", body:resp.rows[0].body, log:resp.rows[0].log, hidden:resp.rows[0].log, modifiedtime:resp.rows[0].modifiedtime})
-                } else {
-                    res.json({message:"no perms"})
-                }
+                res.json({message:"no perms"})
             }
         } else {
-            let candowiththisdoc = await candowiththisdoc(for_acl.rows[0].acl, [{"name":"user", "expire":"none"}])
-            if (candowiththisdoc.watch == true) {
-                res.json({message:"suc", body:resp.rows[0].body, log:resp.rows[0].log, hidden:resp.rows[0].log, modifiedtime:resp.rows[0].modifiedtime})
+            let candowiththisdic = await candowiththisdoc(for_acl.rows[0].acl, req)
+            if (candowiththisdic.watch == true) {
+                const response = await axios.post(
+                    process.env.PARSER_SERVER,
+                    JSON.parse(
+                      `{"contents":${JSON.stringify(resp.rows[0].body).replace('"', '"')}}`
+                    )
+                  );
+                res.json({message:"suc", body:response.data, log:resp.rows[0].log, modifiedtime:resp.rows[0].modifiedtime,author:resp.rows[0].author})
             } else {
                 res.json({message:"no perms"})
             }

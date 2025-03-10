@@ -22,9 +22,9 @@ const search = require("./routes/search");
 const setting = require("./routes/setting");
 const login = require("./routes/login");
 const getuserinfo = require("./routes/getuserinfo");
-const candowiththisdoc = require("./routes/candowiththisdoc");
 const random = require("./routes/random");
 const logout = require("./routes/logout");
+const history = require("./routes/history");
 const { spawn } = require("child_process");
 /*const parser = spawn('parser.exe');
 parser.stdout.on('data', (data) => {
@@ -36,7 +36,7 @@ parser.stderr.on('data', (data) => {
 app.use(
   session({
     secret: process.env.SECRET,
-    cookie: { secure: false, maxAge: 600000 },
+    cookie: { secure: false, maxAge: 6000000 },
     saveUninitialized: false,
     resave: false,
   })
@@ -54,9 +54,9 @@ app.use("/login/", login);
 app.use("/getuserinfo/", getuserinfo);
 app.use("/search/", search);
 app.use("/setting/", setting);
-app.use("/candowiththisdoc/", candowiththisdoc)
 app.use("/random/", random)
 app.use("/logout/", logout)
+app.use("/history/", history)
 app.listen(process.env.PORT, () => {
   console.log(`App listening on: ${process.env.PORT}`);
 });

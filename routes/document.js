@@ -11,97 +11,84 @@ app.use(express.json());
 app.get(`/:namespace/:docname`, async (req, res) => {
   let docname = req.params.docname;
   let namespace = req.params.namespace;
-  let canwatch = false;
   const documentinfo = await sql.query(`SELECT * FROM doc WHERE title=$1 AND namespace=$2`, [docname, namespace])
-  if (documentinfo.rowCount === 0) {return res.status(404).send("Document not found");}
-  let documentACL = documentinfo.rows[0].acl;
-  if (req.session.info == undefined) {
-    canwatch = await candowiththisdoc(documentACL, [{"name":"user", "expire":"none"}], req)
-  } else {
-    canwatch = await candowiththisdoc(documentACL, req.session.info.user_group, req)
-  }
-  if (canwatch.watch) {
+  if (documentinfo.rowCount === 0) {return res.status(404).json({content:"Document not found", candowiththisdoc:{edit:false, watch:false, acl:false}});}
+  const document = await sql.query(`SELECT * FROM history WHERE title=$1 AND namespace=$2 AND rev=$3`, [docname, namespace, documentinfo.rows[0].lastrev-1])
+  let cando = (await candowiththisdoc(documentinfo.rows[0].acl, req))
+  canwatch = cando.watch
+  if (canwatch) {
     try {
       const response = await axios.post(
         process.env.PARSER_SERVER,
         JSON.parse(
-          `{"contents":${JSON.stringify(documentinfo.rows[0].body).replace('"', '"')}}`
+          `{"contents":${JSON.stringify(document.rows[0].body).replace('"', '"')}}`
         )
       );
-      res.send(response.data);
+      res.json({content:response.data,candowiththisdoc:cando,acl:documentinfo.rows[0].acl});
     } catch(err) {
-      res.send("Parser server not working Σ(っ °Д °<span style='color:red;'>;</span>)っ connect to server administrator")
+      res.json({content:err+"Parser server not working Σ(っ °Д °<span style='color:red;'>;</span>)っ connect to server administrator", acl:documentinfo.rows[0].acl,candowiththisdoc:cando})
     }    
   } else {
-    res.send("No perms")
+    res.json({content:"No perms",acl:documentinfo.rows[0].acl,candowiththisdoc:cando})
   }
-  
 });
-
+const index = meili.index(process.env.WIKINAME)
 app.post(`/:namespace/:docname`, async (req, res) => {
   let title = req.params.docname;
-  let namespace = req.params.namespace;
-  let body = req.body.body;
-  let user_groups = [{name:"user"}];
-  if (req.session.info != undefined) {
-    user_groups = req.session.info.user_group
-  }
-  const resp = await sql.query(`SELECT 1 FROM namespace WHERE name=$1`, [
-    namespace,
-  ]);
-  if (resp.rowCount == 0) {
-    namespace = process.env.WIKINAME;
-  }
-  const checkQuery = `SELECT * FROM doc WHERE title = $1 AND namespace=$2`; // 동일한 title이 있는지 확인하는 쿼리
-  const insertQuery = `INSERT INTO doc (title, body, namespace) VALUES ($1, $2, $3)`; // 새로운 문서 추가 쿼리
-  const updateQuery = `UPDATE doc SET body = $2, lastmodifiedtime = CURRENT_TIMESTAMP WHERE title = $1 AND namespace = $3`;
-  const index = meili.index(process.env.WIKINAME)
-  try {
-    // 동일한 title이 존재하는지 확인
-    sql.query(checkQuery, [title, namespace], async (err, docinfo) => {
-      if (err) {
-        res.send("Failed to get Document");
-      }
-      if (docinfo.rows.length != 0) {
-        if (req.body.acl != undefined) {
-          if ((await candowiththisdoc(docinfo.rows[0].acl, user_groups, req)).acl == true) {
-            sql.query(`UPDATE doc SET acl = $1 WHERE title = $2 AND namespace = $3`, [req.body.acl, title, namespace])
+  let body = req.body;
+  const resp = await sql.query(`SELECT * FROM namespace WHERE name=$1`, [req.params.namespace,]);
+  let namespace = (resp.rowCount == 0) ? ("document") : (req.params.namespace);
+  const resp2 = await sql.query(`SELECT * FROM doc WHERE title=$1 AND namespace=$2`, [title, namespace])
+  if (resp2.rows.length != 0) {
+        if (body.method == "acl") {
+          if ((await candowiththisdoc(resp2.rows[0].acl, req)).acl == true) {
+            sql.query(`UPDATE doc SET acl=$4 WHERE namespace=$2 AND title=$3`, [
+              namespace,
+              title,
+              body.acl
+            ])
           } else {
             res.send("No Perms")
           }
-        } else {
-          if ((await candowiththisdoc(docinfo.rows[0].acl, user_groups, req)).edit == true) {
-            sql.query(updateQuery, [title, body, namespace], async (err, _res) => {
-              if (err) {
-                res.send("Failed To Update Doc");
-              }
-              let id = SHA256(namespace+":"+title).toString(
-                CryptoJS.enc.Hex
-              );
-              const response = await index.addDocuments([{id:id,title:title,namespace:namespace,prettytitle:namespace+":"+title, content:body}])
-              res.send(
-                `문서 '${namespace}:${title}'가 성공적으로 업데이트되었습니다.`
-              );
-            });
+        } else if (body.method == "edit") {
+          if ((await candowiththisdoc(resp2.rows[0].acl, req)).edit == true) {
+            sql.query(`INSERT INTO history (namespace, title, rev, body, log, author) VALUES ($1, $2, $3, $4, $5, $6)`, [
+              namespace,
+              title,
+              resp2.rows[0].lastrev,
+              body.body,
+              body.log,
+              body.author
+            ])
+            sql.query(`UPDATE doc SET lastrev=$1 WHERE namespace=$2 AND title=$3`, [
+              resp2.rows[0].lastrev + 1,
+              namespace,
+              title
+            ])
+            res.send(`문서 '${namespace}:${title}'가 성공적으로 업데이트되었습니다.`);
           } else {
             res.send("No Perms");
           }
         }
       } else {
         // 동일한 title이 없다면 문서 추가
-        const index = meili.index(process.env.WIKINAME)
-        sql.query(insertQuery, [title, body, namespace]);
+        sql.query(`INSERT INTO history (namespace, title, body, log, author) VALUES ($1, $2, $3, $4, $5)`, [
+          namespace,
+          title,
+          body.body,
+          body.log,
+          body.author //프론트랑 API Key로 연동할꺼라서 변조 걱정 ㄴㄴ
+        ]);
+        sql.query(`INSERT INTO doc (title,namespace) VALUES ($1, $2)`, [
+          title,
+          namespace
+        ])
         let id = SHA256(namespace+":"+title).toString(
           CryptoJS.enc.Hex
         );
-        const response = await index.addDocuments([{id:id,title:title,namespace:namespace,prettytitle:namespace+":"+title, content:body}])
+        await index.addDocuments([{id:id,title:title,namespace:namespace,prettytitle:namespace+":"+title, content:body}])
         res.send(`문서 '${title}'가 성공적으로 추가되었습니다.`);
-      }
-    });
-    // 동일한 title이 존재하면 그 문서 업데이트
-  } catch (err) {
-    console.error("문서 추가 실패:", err.stack);
-  }
+    }
 });
 
 module.exports = app;

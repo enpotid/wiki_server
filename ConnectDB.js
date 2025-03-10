@@ -23,28 +23,16 @@ async function ChkTables() {
     { name: "namespace",
       colums: [
         { name: "name", type: "text", keys: ["primary"], notnull: true},
-        { name: "defaultacl", type: "json", default: "'{\"watch\":[{\"condition\":\"everyone\",\"allow\":true}], \"edit\":[{\"condition\":\"everyone\",\"allow\":true}]}'::json"}
+        { name: "defaultacl", type: "json", default: `'{}'::json`}
       ]
     },
     {
       name: "doc",
       colums: [
         { name: "title", type: "text", notnull: true },
-        { name: "body", type: "text" },
         { name: "namespace", type: "text", notnull: true},
-        {
-          name: "createdtime",
-          type: "timestamp with time zone",
-          default: "CURRENT_TIMESTAMP",
-        },
-        {
-          name: "lastmodifiedtime",
-          type: "timestamp with time zone",
-          default: "CURRENT_TIMESTAMP",
-        },
-        { name: "acl", type: "json", default: "'{\"watch\":[{\"condition\":\"everyone\",\"allow\":true}], \"edit\":[{\"condition\":\"everyone\",\"allow\":true}]}'::json" },
         { name: "lastrev", type: "integer", default: "0" },
-        { name:"log", type:"text"}
+        { name:"acl", type:"json", default:`'{}'::json`}
       ],
     },
     {
@@ -58,6 +46,7 @@ async function ChkTables() {
           default: "CURRENT_TIMESTAMP",
         },
         { name: "user_group", type: "json", default:`'[{"name":"user", "expire":"none"}]'::json` },
+        { name: "permission", type: "json", default:`'[""]'::json`},
         { name: "setting", type: "json", default:`'{}'::json` },
       ],
     },
@@ -65,19 +54,19 @@ async function ChkTables() {
       name: "groups",
       colums: [
         { name:"name", type:"text", keys: ["primary"], notnull:true },
-        { name:"permissions", type:"json", default:`'["+edit", "+watch"]'::json`}
       ]
     },
     {
       name: "history",
       colums: [
         { name:"namespace", type:"text", notnull:true },
-        { name:"document", type:"text", notnull:true},
-        { name:"rev", type:"integer", notnull:true},
+        { name:"title", type:"text", notnull:true},
+        { name:"rev", type:"integer", notnull:true, default:"0"},
         { name:"hidden", type:"boolean", notnull:true, default:"false"},
         { name:"body", type:"text"},
         { name:"log", type:"text"},
-        { name:"modifiedtime", type:"timestamp with time zone", notnull:true}
+        { name:"modifiedtime", type:"timestamp with time zone", notnull:true, default:"CURRENT_TIMESTAMP"},
+        { name:"author", type:"text", notnull:true}
       ]
     }
   ];
@@ -225,13 +214,13 @@ async function ChkDB() {
   const res2 = await sql.query(`SELECT 1 FROM groups WHERE name=$1`, ["owner"])
   if (res2.rowCount != 1) {
     console.log("위키의 기본 사용자 그룹이 존제하지 않습니다. 기본 사용자 그룹을 만들겠습니다.")
-    await sql.query(`INSERT INTO groups (name, permissions) VALUES ($1, $2)`, ["owner", "[\"owner\"]"])
+    await sql.query(`INSERT INTO groups (name) VALUES ($1)`, ["owner"])
     console.log(`위키를 처음 시작하시나요? http://localhost:${process.env.port}/config 에 접속하세요`)
   }
   const res3 = await sql.query(`SELECT 1 FROM groups WHERE name=$1`, ["user"])
   if (res3.rowCount != 1) {
     console.log("위키의 기본 사용자 그룹이 존제하지 않습니다. 기본 사용자 그룹을 만들겠습니다.")
-    await sql.query(`INSERT INTO groups (name, permissions) VALUES ($1, $2)`, ["user", "[\"edit\", \"watch\"]"])
+    await sql.query(`INSERT INTO groups (name) VALUES ($1)`, ["user"])
     console.log(`위키를 처음 시작하시나요? http://localhost:${process.env.port}/config 에 접속하세요`)
   }
 }
