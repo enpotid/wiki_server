@@ -13,7 +13,7 @@ app.get(`/:namespace/:docname`, async (req, res) => {
   let namespace = req.params.namespace;
   const documentinfo = await sql.query(`SELECT * FROM doc WHERE title=$1 AND namespace=$2`, [docname, namespace])
   if (documentinfo.rowCount === 0) {return res.status(404).json({content:"Document not found", candowiththisdoc:{edit:false, watch:false, acl:false}});}
-  const document = await sql.query(`SELECT * FROM history WHERE title=$1 AND namespace=$2 AND rev=$3`, [docname, namespace, documentinfo.rows[0].lastrev-1])
+  const document = await sql.query(`SELECT * FROM history WHERE title=$1 AND namespace=$2 AND rev=$3`, [docname, namespace, documentinfo.rows[0].lastrev])
   let cando = (await candowiththisdoc(documentinfo.rows[0].acl, req))
   canwatch = cando.watch
   if (canwatch) {
@@ -42,7 +42,7 @@ app.post(`/:namespace/:docname`, async (req, res) => {
   if (resp2.rows.length != 0) {
         if (body.method == "acl") {
           if ((await candowiththisdoc(resp2.rows[0].acl, req)).acl == true) {
-            sql.query(`UPDATE doc SET acl=$4 WHERE namespace=$2 AND title=$3`, [
+            sql.query(`UPDATE doc SET acl=$3 WHERE namespace=$1 AND title=$2`, [
               namespace,
               title,
               body.acl
@@ -52,13 +52,14 @@ app.post(`/:namespace/:docname`, async (req, res) => {
           }
         } else if (body.method == "edit") {
           if ((await candowiththisdoc(resp2.rows[0].acl, req)).edit == true) {
+            let author = ((req.session.info != undefined) ? (req.session.info.name) : (body.author))
             sql.query(`INSERT INTO history (namespace, title, rev, body, log, author) VALUES ($1, $2, $3, $4, $5, $6)`, [
               namespace,
               title,
-              resp2.rows[0].lastrev,
+              resp2.rows[0].lastrev+1,
               body.body,
               body.log,
-              body.author
+              author
             ])
             sql.query(`UPDATE doc SET lastrev=$1 WHERE namespace=$2 AND title=$3`, [
               resp2.rows[0].lastrev + 1,

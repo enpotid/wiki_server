@@ -3,6 +3,37 @@ const { sql } = require("../ConnectDB");
 const { candowiththisdoc } = require("../usermanager");
 const { default: axios } = require("axios");
 const app = express.Router();
+app.get(`/:namespace/:document/list/:nums/:pages`, (req, res) => {
+    let nums = req.params.nums
+    let pages = req.params.pages;
+    if (nums > 100) {
+        res.status(400).send("Too lot.")
+    } else if (isNaN(Number(nums))) {
+        res.status(400).send("Bad Request")
+    } else {
+        if (nums > 100) {
+            res.status(400).send("Too lot.")
+        } else if (isNaN(Number(nums))) {
+            res.status(400).send("Bad Request")
+        } else {
+            process(req, res, nums)
+        }
+    }
+    async function process(req, res, nums) {
+        let namespace = req.params.namespace;
+        let document = req.params.document;
+        let gethidden = ""
+        if (req.session.info != undefined) {
+            gethidden = ((req.session.info.permission.includes("hide_rev") || req.session.info.permission.includes("owner")) ? ("") : (" AND hidden != false"))
+        }
+        const resp = await sql.query(`SELECT hidden,rev,log,modifiedtime,author FROM history WHERE namespace=$1 AND title=$2${gethidden}`, [namespace, document])
+        if (resp.rowCount == 0) {
+            res.status(404).json({message:"not found"})
+        } else {
+            res.json({message:"suc",history:resp.rows})
+        }
+    }
+})
 app.get(`/:namespace/:document/:rev`, async (req, res) => {
     let namespace = req.params.namespace;
     let document = req.params.document;
@@ -43,28 +74,6 @@ app.get(`/:namespace/:document/:rev`, async (req, res) => {
                 res.json({message:"no perms"})
             }
         }
-    }
-})
-app.get(`/:namespace/:document/list/:nums/:pages`, (req, res) => {
-    let namespace = req.params.namespace;
-    let document = req.params.document;
-    let nums = req.params.nums
-    let pages = req.params.pages;
-    if (nums > 100) {
-        res.status(400).send("Too lot.")
-    } else if (isNaN(Number(nums))) {
-        res.status(400).send("Bad Request")
-    } else {
-        if (nums > 100) {
-            res.status(400).send("Too lot.")
-        } else if (isNaN(Number(nums))) {
-            res.status(400).send("Bad Request")
-        } else {
-            process(req, res, nums)
-        }
-    }
-    async function process(req, res, nums) {
-        sql.query(`SELECT $1 FROM history `)
     }
 })
 module.exports = app;

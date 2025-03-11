@@ -7,7 +7,7 @@ app.get(`/:namespace/:docname/`, async (req, res) => {
   let namespace = req.params.namespace;
   const for_acl = await sql.query(`SELECT * FROM doc WHERE title=$1 AND namespace=$2`, [docname, namespace])
   if (for_acl.rowCount == 0) {return res.status(404).json({body:"Not Found"});}
-  const documentinfo = await sql.query(`SELECT * FROM history WHERE title=$1 AND namespace=$2 AND rev=$3`, [docname, namespace, for_acl.rows[0].lastrev-1])
+  const documentinfo = await sql.query(`SELECT * FROM history WHERE title=$1 AND namespace=$2 AND rev=$3`, [docname, namespace, for_acl.rows[0].lastrev])
   if (req.session.info == undefined) {
     if ((await candowiththisdoc(for_acl.rows[0].acl, req)).watch == true) {
       res.json({
