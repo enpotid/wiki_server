@@ -68,6 +68,15 @@ async function ChkTables() {
         { name:"modifiedtime", type:"timestamp with time zone", notnull:true, default:"CURRENT_TIMESTAMP"},
         { name:"author", type:"text", notnull:true}
       ]
+    },
+    {
+      name: "log",
+      colums: [
+        { name:"who", type:"text", notnull:true },
+        { name:"time", type:"timestamp with time zone", notnull:true, default:"CURRENT_TIMESTAMP"},
+        { name:"type", type:"text", notnull:true},
+        { name:"log", type:"json", notnull:true},
+      ]
     }
   ];
   await Chk_logic(tables);
