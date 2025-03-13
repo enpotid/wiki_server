@@ -78,7 +78,7 @@ app.post(`/:namespace/:docname`, async (req, res) => {
           title,
           body.body,
           body.log,
-          body.author //프론트랑 API Key로 연동할꺼라서 변조 걱정 ㄴㄴ
+          author //프론트랑 API Key로 연동할꺼라서 변조 걱정 ㄴㄴ
         ]);
         sql.query(`INSERT INTO doc (title,namespace) VALUES ($1, $2)`, [
           title,
