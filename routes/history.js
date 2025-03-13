@@ -40,7 +40,6 @@ app.get(`/:namespace/:document/:rev`, async (req, res) => {
     let rev = req.params.rev
     const resp = await sql.query(`SELECT * from history WHERE namespace=$1 AND title=$2 AND rev=$3`, [namespace, document, rev])
     const for_acl = await sql.query(`SELECT * from doc WHERE namespace=$1 AND title=$2`, [namespace, document])
-    console.log(resp.rowCount)
     if (resp.rowCount == 0) {
         res.status(404).json({message:"not found"})
     } else {

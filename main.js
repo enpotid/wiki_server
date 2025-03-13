@@ -25,6 +25,7 @@ const getuserinfo = require("./routes/getuserinfo");
 const random = require("./routes/random");
 const logout = require("./routes/logout");
 const history = require("./routes/history");
+const recentchanges = require("./routes/recentchanges")
 const { spawn } = require("child_process");
 /*const parser = spawn('parser.exe');
 parser.stdout.on('data', (data) => {
@@ -57,6 +58,7 @@ app.use("/setting/", setting);
 app.use("/random/", random)
 app.use("/logout/", logout)
 app.use("/history/", history)
+app.use("/recentchanges/", recentchanges)
 app.listen(process.env.PORT, () => {
   console.log(`App listening on: ${process.env.PORT}`);
 });
