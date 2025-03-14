@@ -27,6 +27,9 @@ const logout = require("./routes/logout");
 const history = require("./routes/history");
 const recentchanges = require("./routes/recentchanges")
 const { spawn } = require("child_process");
+const { WebSocketServer } = require("ws");
+const http = require("http");
+const { error } = require("console");
 /*const parser = spawn('parser.exe');
 parser.stdout.on('data', (data) => {
   console.log(`[parser] ${data}`);
@@ -34,13 +37,16 @@ parser.stdout.on('data', (data) => {
 parser.stderr.on('data', (data) => {
   console.error(`[parser] ${data}`);
 });*/
+const serv = http.createServer(app);
+const sess = session({
+  secret: process.env.SECRET,
+  cookie: { secure: false, maxAge: 6000000 },
+  saveUninitialized: false,
+  resave: false,
+})
+const wss = new WebSocketServer({ clientTracking: false, noServer: true })
 app.use(
-  session({
-    secret: process.env.SECRET,
-    cookie: { secure: false, maxAge: 6000000 },
-    saveUninitialized: false,
-    resave: false,
-  })
+  sess
 );
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -59,6 +65,42 @@ app.use("/random/", random)
 app.use("/logout/", logout)
 app.use("/history/", history)
 app.use("/recentchanges/", recentchanges)
-app.listen(process.env.PORT, () => {
-  console.log(`App listening on: ${process.env.PORT}`);
+function onSocketError(err) {
+  console.error(err);
+}
+serv.on('upgrade', function (request, socket, head) {
+  socket.on('error', onSocketError);
+
+  let name = request.socket.remoteAddress
+
+  sess(request, {}, () => {
+    if (request.session.info != undefined) {
+      name = request.session.info.name
+    }
+
+    socket.removeListener('error', onSocketError);
+
+    wss.handleUpgrade(request, socket, head, function (ws) {
+      wss.emit('connection', ws, request, name);
+    });
+  });
 });
+
+wss.on('connection', function (ws, request, name) {
+  ws.on('error', console.error);
+
+  ws.on('message', function (message) {
+    console.log(`Received message ${message} from user ${name}`);
+  });
+
+  ws.on('close', function () {
+  });
+});
+
+//
+// Start the server.
+//
+serv.listen(process.env.PORT, function () {
+  console.log('Listening on http://localhost:8080');
+});
+module.exports = {session}
