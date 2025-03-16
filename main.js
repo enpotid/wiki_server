@@ -26,6 +26,7 @@ const random = require("./routes/random");
 const logout = require("./routes/logout");
 const history = require("./routes/history");
 const recentchanges = require("./routes/recentchanges")
+const thread = require("./routes/thread")
 const { spawn } = require("child_process");
 const { WebSocketServer } = require("ws");
 const http = require("http");
@@ -44,7 +45,7 @@ const sess = session({
   saveUninitialized: false,
   resave: false,
 })
-const wss = new WebSocketServer({ clientTracking: false, noServer: true })
+const wss = new WebSocketServer({server:serv})
 app.use(
   sess
 );
@@ -65,42 +66,7 @@ app.use("/random/", random)
 app.use("/logout/", logout)
 app.use("/history/", history)
 app.use("/recentchanges/", recentchanges)
-function onSocketError(err) {
-  console.error(err);
-}
-serv.on('upgrade', function (request, socket, head) {
-  socket.on('error', onSocketError);
-
-  let name = request.socket.remoteAddress
-
-  sess(request, {}, () => {
-    if (request.session.info != undefined) {
-      name = request.session.info.name
-    }
-
-    socket.removeListener('error', onSocketError);
-
-    wss.handleUpgrade(request, socket, head, function (ws) {
-      wss.emit('connection', ws, request, name);
-    });
-  });
-});
-
-wss.on('connection', function (ws, request, name) {
-  ws.on('error', console.error);
-
-  ws.on('message', function (message) {
-    console.log(`Received message ${message} from user ${name}`);
-  });
-
-  ws.on('close', function () {
-  });
-});
-
-//
-// Start the server.
-//
+app.use("/thread/", thread)
 serv.listen(process.env.PORT, function () {
   console.log('Listening on http://localhost:8080');
 });
-module.exports = {session}

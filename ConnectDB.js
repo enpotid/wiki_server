@@ -77,6 +77,25 @@ async function ChkTables() {
         { name:"type", type:"text", notnull:true},
         { name:"log", type:"json", notnull:true},
       ]
+    },
+    {
+      name: "talks",
+      colums: [
+        { name:"namespace", type:"text", notnull:true },
+        { name:"title", type:"text", notnull:true},
+        { name:"talkid", type:"uuid", notnull:true},
+        { name:"talktitle", type:"text", notnull:true},
+        { name:"status", type:"text", notnull:true},
+      ]
+    },
+    {
+      name: "talk",
+      colums: [
+        { name:"talkid", type:"uuid", notnull:true },
+        { name:"type", type:"text", notnull:true},
+        { name:"body", type:"text", notnull:true},
+        { name:"author", type:"text", notnull:true},
+      ]
     }
   ];
   await Chk_logic(tables);
