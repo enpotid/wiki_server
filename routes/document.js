@@ -39,6 +39,7 @@ app.post(`/:namespace/:docname`, async (req, res) => {
   const resp = await sql.query(`SELECT * FROM namespace WHERE name=$1`, [req.params.namespace,]);
   let namespace = (resp.rowCount == 0) ? ("document") : (req.params.namespace);
   const resp2 = await sql.query(`SELECT * FROM doc WHERE title=$1 AND namespace=$2`, [title, namespace])
+  let author = ((req.session.info != undefined) ? (req.session.info.name) : (body.author))
   if (resp2.rows.length != 0) {
         if (body.method == "acl") {
           if ((await candowiththisdoc(resp2.rows[0].acl, req)).acl == true) {
@@ -52,7 +53,6 @@ app.post(`/:namespace/:docname`, async (req, res) => {
           }
         } else if (body.method == "edit") {
           if ((await candowiththisdoc(resp2.rows[0].acl, req)).edit == true) {
-            let author = ((req.session.info != undefined) ? (req.session.info.name) : (body.author))
             sql.query(`INSERT INTO history (namespace, title, rev, body, log, author) VALUES ($1, $2, $3, $4, $5, $6)`, [
               namespace,
               title,

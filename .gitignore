@@ -5,3 +5,4 @@ parser/target
 parser/Cargo.lock
 NVIDIA Corporation/
 todo.wow
+meili_data/

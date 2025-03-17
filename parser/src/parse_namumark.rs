@@ -18,13 +18,13 @@ pub fn parse_first(contents:&str, buffer:&mut String) {
 fn parse_header(buffer:&mut String) {
     let re = Regex::new(r"((={1,6})(#?) ?([^\n]+) \3\2)").unwrap();
     let binding = buffer.clone();
-    for binding in binding.lines() {
-        let result = re.captures_iter(&binding);
-        let mut i:usize = 0;
+    let mut i:usize = 0;
         let mut ans: Vec<String> = Vec::new();
         let mut maxes: Vec<usize> = Vec::new();
         let mut max = 1;
         let mut headerstack = [false; 6]; //이게 더시드고 그렇고 내가 원하는 기능이 없드라
+    for binding in binding.lines() {
+        let result = re.captures_iter(&binding);
         for captures in result {
             let mut divs = String::new();
             i += 1;
