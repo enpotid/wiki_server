@@ -17,11 +17,12 @@ app.get(`/:namespace/:docname`, async (req, res) => {
   let cando = (await candowiththisdoc(documentinfo.rows[0].acl, req))
   canwatch = cando.watch
   if (canwatch) {
+    let broken_link = await getbroken(document.rows[0].body)
     try {
       const response = await axios.post(
         process.env.PARSER_SERVER,
         JSON.parse(
-          `{"contents":${JSON.stringify(document.rows[0].body).replace('"', '"')}}`
+          `{"contents":${JSON.stringify(document.rows[0].body).replace('"', '"')},"broken_links":${JSON.stringify(broken_link)}}`
         )
       );
       res.json({content:response.data,candowiththisdoc:cando,acl:documentinfo.rows[0].acl});
@@ -91,5 +92,26 @@ app.post(`/:namespace/:docname`, async (req, res) => {
         res.send(`문서 '${title}'가 성공적으로 추가되었습니다.`);
     }
 });
+async function getbroken (body) {
+  let regex = /\[\[(((?!\[\[|\]\]|\n).|\n)*)\]\]/
+  let result = []
+  while (regex.test(body) == true) {
+    body = body.replace(regex, async (match, content) => {
+      let parsed = content.split(/\|(?=[^]*$)/) //parsed[0] = link
+      let split = parsed.split(":", 0)
+      let ns = (split[1] != undefined ? (split[0]) : ("document"))
+      let title = (split[1] != undefined ? (split[1]) : (split[0]))
+      const resp = await sql.query(`SELECT * FROM doc where namespace=$1 AND title=$2`, [ns, title])
+      if (resp.rowCount == 0) {
+        result.push({ns:ns, title:title, broken:true})
+      } else {
+        result.push({ns:ns, title:title, broken:false}) //여기에 락을 안건 나는 그저 범부. 이거 조회하는동안 문서 생성되면 ㅋㅋㅋ
+      }
+      return "";
+    })
+  }
+  
+}
+
 
 module.exports = app;
