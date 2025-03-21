@@ -2,22 +2,46 @@ use std::{io::{stdin, stdout, Write}, ptr::null, result};
 
 use fancy_regex::{Captures, Regex};
 use warp::filters::method::head;
-pub fn parse (contents:&str) -> std::string::String {
+pub fn parse (contents:&str, links:Vec<bool>) -> std::string::String {
     let mut rendered =String::from(contents);
-    parse_first(contents, &mut rendered);
+    parse_first(contents, &mut rendered, links);
     return rendered;
 }
-pub fn parse_first(contents:&str, buffer:&mut String) {
+pub fn parse_first(contents:&str, buffer:&mut String, links:Vec<bool>) {
     let isdark = true;
     parse_comment(buffer);
     parse_triple(buffer, isdark);
     parse_header(buffer);
     parse_backslash(buffer);
-    parse_link(buffer)
+    parse_link(buffer, links);
     *buffer = buffer.replace("[펼접]", "[ 펼치기 · 접기 ]")
 }
-fn parse_link (buffer:&mut String) {
-    let re = Regex::new(r"\{\{\{(((?!{{{|}}}|\s).|\n)*)(\s(((?!{{{|}}}).|\n)*))\}\}\}");
+fn parse_link (buffer:&mut String, links:Vec<bool>) {
+    let re = Regex::new(r"\[\[(((?!\[\[|\]\]|\n).|\n)*)\]\]").unwrap();
+    let mut i = 0;
+    while links.len() > i {
+        let binding = buffer.clone();
+        for cap in re.captures_iter(&binding) {
+            let cap = cap.unwrap();
+            let a = cap.get(1).unwrap().as_str();
+            let parsed = a.split_once("|");
+            match parsed {
+                Some((b, a)) => {
+                    if links[i] == false {
+                        *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("<a style=\"color:red;\" href=\"/w/{}\">{}</a>", b, a), 1)
+                    } else {
+                        *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("<a href=\"/w/{}\">{}</a>", b, a), 1)
+                    }
+                    
+                },
+                None => {
+                    *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("<a href=\"/w/{}\">{}</a>", a, a), 1)
+                }
+            }
+            i += 1;
+        }
+    }
+    
 }
 fn parse_header(buffer:&mut String) {
     let re = Regex::new(r"((={1,6})(#?) ?([^\n]+) \3\2)").unwrap();

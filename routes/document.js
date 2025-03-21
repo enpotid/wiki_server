@@ -17,7 +17,8 @@ app.get(`/:namespace/:docname`, async (req, res) => {
   let cando = (await candowiththisdoc(documentinfo.rows[0].acl, req))
   canwatch = cando.watch
   if (canwatch) {
-    let broken_link = await getbroken(document.rows[0].body)
+    const broken_link = await getbroken(document.rows[0].body)
+    console.log(JSON.stringify(broken_link))
     try {
       const response = await axios.post(
         process.env.PARSER_SERVER,
@@ -93,24 +94,25 @@ app.post(`/:namespace/:docname`, async (req, res) => {
     }
 });
 async function getbroken (body) {
-  let regex = /\[\[(((?!\[\[|\]\]|\n).|\n)*)\]\]/
+  let regex = /\[\[(((?!\[\[|\]\]|\n).|\n)*)\]\]/g
   let result = []
   while (regex.test(body) == true) {
-    body = body.replace(regex, async (match, content) => {
-      let parsed = content.split(/\|(?=[^]*$)/) //parsed[0] = link
-      let split = parsed.split(":", 0)
-      let ns = (split[1] != undefined ? (split[0]) : ("document"))
-      let title = (split[1] != undefined ? (split[1]) : (split[0]))
-      const resp = await sql.query(`SELECT * FROM doc where namespace=$1 AND title=$2`, [ns, title])
-      if (resp.rowCount == 0) {
-        result.push({ns:ns, title:title, broken:true})
+    for (let e of body.match(regex)) {
+      let ew = e.split("|", 1)
+      let ee = ew[0].slice(2, e.length - 2)
+      let parsed = ee.split(":")
+      let ns = (parsed[1] == undefined ? ("document") : (parsed[0]))
+      let title = (parsed[1] == undefined ? (parsed[0]) : (parsed.slice(1).join(":")))
+      const resp = await sql.query(`SELECT * FROM doc WHERE namespace=$1 AND title=$2`, [ns, title])
+      if (resp.rowCount == 1) {
+        result.push(true)
       } else {
-        result.push({ns:ns, title:title, broken:false}) //여기에 락을 안건 나는 그저 범부. 이거 조회하는동안 문서 생성되면 ㅋㅋㅋ
+        result.push(false)
       }
-      return "";
-    })
+      body = body.replace(e, "")
+    }
   }
-  
+  return result
 }
 
 
