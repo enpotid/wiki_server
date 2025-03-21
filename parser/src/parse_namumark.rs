@@ -13,7 +13,11 @@ pub fn parse_first(contents:&str, buffer:&mut String) {
     parse_triple(buffer, isdark);
     parse_header(buffer);
     parse_backslash(buffer);
+    parse_link(buffer)
     *buffer = buffer.replace("[펼접]", "[ 펼치기 · 접기 ]")
+}
+fn parse_link (buffer:&mut String) {
+    let re = Regex::new(r"\{\{\{(((?!{{{|}}}|\s).|\n)*)(\s(((?!{{{|}}}).|\n)*))\}\}\}");
 }
 fn parse_header(buffer:&mut String) {
     let re = Regex::new(r"((={1,6})(#?) ?([^\n]+) \3\2)").unwrap();
