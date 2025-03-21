@@ -14,7 +14,14 @@ pub fn parse_first(contents:&str, buffer:&mut String, links:Vec<bool>) {
     parse_header(buffer);
     parse_backslash(buffer);
     parse_link(buffer, links);
+    parse_table(buffer);
     *buffer = buffer.replace("[펼접]", "[ 펼치기 · 접기 ]")
+}
+fn parse_table (buffer:&mut String) {
+    let regex = Regex::new(r"\n\|\|(?!(\|\|)).)\|\|\n").unwrap();
+    for cap in regex.captures_iter(&buffer) {
+        println!("{}", cap.unwrap().get(0).unwrap().as_str())
+    }
 }
 fn parse_link (buffer:&mut String, links:Vec<bool>) {
     let re = Regex::new(r"\[\[(((?!\[\[|\]\]|\n).|\n)*)\]\]").unwrap();
@@ -35,7 +42,12 @@ fn parse_link (buffer:&mut String, links:Vec<bool>) {
                     
                 },
                 None => {
-                    *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("<a href=\"/w/{}\">{}</a>", a, a), 1)
+                    if links[i] == false {
+                        *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("<a style=\"color:red\" href=\"/w/{}\">{}</a>", a, a), 1)
+                    } else {
+                        *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("<a href=\"/w/{}\">{}</a>", a, a), 1)
+                    }
+                    
                 }
             }
             i += 1;
