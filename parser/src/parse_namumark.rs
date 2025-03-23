@@ -67,7 +67,10 @@ fn parse_link (buffer:&mut String, links:Vec<bool>) {
             let parsed = a.split_once("|");
             match parsed {
                 Some((b, a)) => {
-                    if links[i] == false {
+                    if b.starts_with("https://") || b.starts_with("http://") {
+                        *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("<a href=\"{}\">{}</a>", b, a), 1)
+                    }
+                    else if links[i] == false {
                         *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("<a style=\"color:red;\" href=\"/w/{}\">{}</a>", b, a), 1)
                     } else {
                         *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("<a href=\"/w/{}\">{}</a>", b, a), 1)
