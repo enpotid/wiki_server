@@ -5,7 +5,7 @@ use warp::filters::method::head;
 pub fn parse (contents:&str, links:Vec<bool>) -> std::string::String {
     let mut rendered =String::from(contents);
     parse_first(contents, &mut rendered, links);
-    return rendered;
+    return rendered.replace("\n", "<br>");
 }
 pub fn parse_first(contents:&str, buffer:&mut String, links:Vec<bool>) {
     let isdark = true;
@@ -68,7 +68,7 @@ fn parse_link (buffer:&mut String, links:Vec<bool>) {
             match parsed {
                 Some((b, a)) => {
                     if b.starts_with("https://") || b.starts_with("http://") {
-                        *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("<a href=\"{}\">{}</a>", b, a), 1)
+                        *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("<a style=\"color:green\" href=\"{}\"><span>(外)</span>{}</a>", b, a), 1)
                     }
                     else if links[i] == false {
                         *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("<a style=\"color:red;\" href=\"/w/{}\">{}</a>", b, a), 1)
