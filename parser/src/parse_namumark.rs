@@ -20,7 +20,7 @@ pub fn parse_first(contents:&str, buffer:&mut String, links:Vec<bool>) {
 fn parse_table (buffer:&mut String) {
     let mut binding: String = buffer.clone();
     let mut st: String = String::from("<tr>");
-    let reg = Regex::new(r"\n((?:(?:(?:(?:\|\|)+)|(?:\|[^|]+\|(?:\|\|)*))\n?(?:(?:(?!\|\|).)+))(?:(?:\|\||\|\|\n|(?:\|\|)+(?!\n)(?:(?:(?!\|\|).)+)\n*)*)\|\|)\n").unwrap();
+    let reg = Regex::new(r"\n((?:(?:(?:(?:\|\|)+)|(?:\|[^|]+\|(?:\|\|)*))\n?(?:(?:(?!\|\|).)+))(?:(?:\|\||\|\|\n|(?:\|\|)+(?!\n)(?:(?:(?!\|\|).)+)\n*)*)\|\|)\n").unwrap(); //real magic
     for cap in reg.captures_iter(&binding) {
         let rege: Regex = Regex::new(r"(\n?)((?:\|\|)+)((?:<(?:(?:(?!<|>).)+)>)*)((?:\n*(?:(?:(?:(?!\|\|).)+)\n*)+)|(?:(?:(?!\|\|).)*))").unwrap();
         let cap: Captures<'_> = cap.unwrap();
@@ -42,6 +42,8 @@ fn parse_table (buffer:&mut String) {
                         rowspan = &e[1..];
                     } else if e.starts_with("bgcolor=") {
                         style.push_str(&format!("background:{}", &e[8..]));
+                    } else if e.starts_with("width=") { //magic numbers!
+                        style.push_str(&format!("width:{}", &e[6..]));
                     }
                 }
             }
