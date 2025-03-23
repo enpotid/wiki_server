@@ -18,18 +18,39 @@ pub fn parse_first(contents:&str, buffer:&mut String, links:Vec<bool>) {
     *buffer = buffer.replace("[펼접]", "[ 펼치기 · 접기 ]")
 }
 fn parse_table (buffer:&mut String) {
-    let mut binding = buffer.clone();
-    let mut st = String::from("<tr>");
+    let mut binding: String = buffer.clone();
+    let mut st: String = String::from("<tr>");
     let reg = Regex::new(r"\n((?:(?:(?:(?:\|\|)+)|(?:\|[^|]+\|(?:\|\|)*))\n?(?:(?:(?!\|\|).)+))(?:(?:\|\||\|\|\n|(?:\|\|)+(?!\n)(?:(?:(?!\|\|).)+)\n*)*)\|\|)\n").unwrap();
     for cap in reg.captures_iter(&binding) {
-        let rege = Regex::new(r"(\n?)((?:\|\|)+)((?:<(?:(?:(?!<|>).)+)>)*)((?:\n*(?:(?:(?:(?!\|\|).)+)\n*)+)|(?:(?:(?!\|\|).)*))").unwrap();
-        let cap = cap.unwrap();
+        let rege: Regex = Regex::new(r"(\n?)((?:\|\|)+)((?:<(?:(?:(?!<|>).)+)>)*)((?:\n*(?:(?:(?:(?!\|\|).)+)\n*)+)|(?:(?:(?!\|\|).)*))").unwrap();
+        let cap: Captures<'_> = cap.unwrap();
         for cap in rege.captures_iter(cap.get(0).unwrap().as_str()) {
             let cap = cap.unwrap();
+            let mut colspan = (cap.get(2).unwrap().as_str().len()/2).to_string();
+            let mut rowspan = "";
+            let mut align:&str;
+            let style = String::new();
+            let mut attr = String::new();
+            let str = cap.get(3).unwrap().as_str();
+            if str != "" {
+                let sliced = &str[1..str.len()-1];
+                let parsed = sliced.split("><");
+                for e in parsed {
+                    if e.starts_with("-") {
+                        colspan = (&e[1..]).to_string();
+                    } else if e.starts_with("|") {
+                        rowspan = &e[1..];
+                    }
+                }
+            }
+            attr.push_str(&format!("colspan=\"{}\" ", &colspan));
+            if rowspan != "" {
+                attr.push_str(&format!("rowspan=\"{}\" ", rowspan));
+            }
             if cap.get(4).unwrap().as_str() == "" {
                 st.push_str(&format!("</tr><tr>"));
             } else {
-                st.push_str(&format!("<td>{}</td>", cap.get(4).unwrap().as_str()));
+                st.push_str(&format!("<td {}>{}</td>",attr, cap.get(4).unwrap().as_str()));
             }
         }
         *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("<table>{}</table>", st), 1);
