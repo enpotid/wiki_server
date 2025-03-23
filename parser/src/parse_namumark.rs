@@ -18,9 +18,21 @@ pub fn parse_first(contents:&str, buffer:&mut String, links:Vec<bool>) {
     *buffer = buffer.replace("[펼접]", "[ 펼치기 · 접기 ]")
 }
 fn parse_table (buffer:&mut String) {
-    let regex = Regex::new(r"\n\|\|(?!(\|\|)).)\|\|\n").unwrap();
-    for cap in regex.captures_iter(&buffer) {
-        println!("{}", cap.unwrap().get(0).unwrap().as_str())
+    let mut binding = buffer.clone();
+    let mut st = String::from("<tr>");
+    let reg = Regex::new(r"\n((?:(?:(?:(?:\|\|)+)|(?:\|[^|]+\|(?:\|\|)*))\n?(?:(?:(?!\|\|).)+))(?:(?:\|\||\|\|\n|(?:\|\|)+(?!\n)(?:(?:(?!\|\|).)+)\n*)*)\|\|)\n").unwrap();
+    for cap in reg.captures_iter(&binding) {
+        let rege = Regex::new(r"(\n?)((?:\|\|)+)((?:<(?:(?:(?!<|>).)+)>)*)((?:\n*(?:(?:(?:(?!\|\|).)+)\n*)+)|(?:(?:(?!\|\|).)*))").unwrap();
+        let cap = cap.unwrap();
+        for cap in rege.captures_iter(cap.get(0).unwrap().as_str()) {
+            let cap = cap.unwrap();
+            if cap.get(4).unwrap().as_str() == "" {
+                st.push_str(&format!("</tr><tr>"));
+            } else {
+                st.push_str(&format!("<td>{}</td>", cap.get(4).unwrap().as_str()));
+            }
+        }
+        *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("<table>{}</table>", st), 1);
     }
 }
 fn parse_link (buffer:&mut String, links:Vec<bool>) {
