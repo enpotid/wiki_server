@@ -29,7 +29,7 @@ fn parse_table (buffer:&mut String) {
             let mut colspan = (cap.get(2).unwrap().as_str().len()/2).to_string();
             let mut rowspan = "";
             let mut align:&str;
-            let style = String::new();
+            let mut style = String::new();
             let mut attr = String::new();
             let str = cap.get(3).unwrap().as_str();
             if str != "" {
@@ -40,6 +40,8 @@ fn parse_table (buffer:&mut String) {
                         colspan = (&e[1..]).to_string();
                     } else if e.starts_with("|") {
                         rowspan = &e[1..];
+                    } else if e.starts_with("bgcolor=") {
+                        style.push_str(&format!("background:{}", &e[8..]));
                     }
                 }
             }
