@@ -7,7 +7,7 @@ const { sql } = require("../ConnectDB");
 const { meili } = require("../meili");
 const SHA256 = require("crypto-js/sha256");
 const CryptoJS = require("crypto-js");
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
 app.get(`/:namespace/:docname`, async (req, res) => {
   let docname = req.params.docname;
   let namespace = req.params.namespace;
