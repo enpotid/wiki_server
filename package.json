@@ -16,6 +16,7 @@
     "express-session": "^1.18.1",
     "helmet": "^8.0.0",
     "meilisearch": "^0.48.2",
+    "multer": "^1.4.5-lts.2",
     "pg": "^8.13.1",
     "uuid": "^11.1.0",
     "ws": "^8.18.1"

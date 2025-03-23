@@ -27,10 +27,13 @@ const logout = require("./routes/logout");
 const history = require("./routes/history");
 const recentchanges = require("./routes/recentchanges")
 const thread = require("./routes/thread")
+const uploadrouter = require("./routes/upload")
 const { spawn } = require("child_process");
 const { WebSocketServer } = require("ws");
 const http = require("http");
 const { error } = require("console");
+const multer = require("multer");
+const path = require("path");
 /*const parser = spawn('parser.exe');
 parser.stdout.on('data', (data) => {
   console.log(`[parser] ${data}`);
@@ -38,6 +41,7 @@ parser.stdout.on('data', (data) => {
 parser.stderr.on('data', (data) => {
   console.error(`[parser] ${data}`);
 });*/
+
 const serv = http.createServer(app);
 const sess = session({
   secret: process.env.SECRET,
@@ -67,6 +71,7 @@ app.use("/logout/", logout)
 app.use("/history/", history)
 app.use("/recentchanges/", recentchanges)
 app.use("/thread/", thread)
+app.use("/upload/", uploadrouter)
 serv.listen(process.env.PORT, function () {
   console.log('Listening on http://localhost:8080');
 });
