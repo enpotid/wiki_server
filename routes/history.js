@@ -2,6 +2,7 @@ const express = require("express");
 const { sql } = require("../ConnectDB");
 const { candowiththisdoc } = require("../usermanager");
 const { default: axios } = require("axios");
+const { getbroken } = require("../documentfns");
 const app = express.Router();
 app.get(`/:namespace/:document/list/:nums/:pages`, (req, res) => {
     let nums = req.params.nums
@@ -46,13 +47,14 @@ app.get(`/:namespace/:document/:rev`, async (req, res) => {
         if (resp.rows[0].hidden) {
             if (req.session.info != undefined) {
                 if (req.session.info.permission.includes("owner") || req.session.info.permission.includes("hide_rev") ) {
+                    const broken_link = await getbroken(resp.rows[0].body)
                     const response = await axios.post(
-                        process.env.PARSER_SERVER,
-                        JSON.parse(
-                          `{"contents":${JSON.stringify(resp.rows[0].body).replace('"', '"')}}`
-                        )
-                      );
-                    res.json({message:"suc", body:response.data, log:resp.rows[0].log, hidden:resp.rows[0].hidden, modifiedtime:resp.rows[0].modifiedtime})
+                    process.env.PARSER_SERVER,
+                    JSON.parse(
+                      `{"contents":${JSON.stringify(resp.rows[0].body).replace('"', '"')},"broken_links":${JSON.stringify(broken_link)}}`
+                    )
+                  );
+                res.json({message:"suc", body:response.data, log:resp.rows[0].log, modifiedtime:resp.rows[0].modifiedtime,author:resp.rows[0].author})
                 } else {
                     res.json({message:"hidden"})
                 }
@@ -62,10 +64,11 @@ app.get(`/:namespace/:document/:rev`, async (req, res) => {
         } else {
             let candowiththisdic = await candowiththisdoc(for_acl.rows[0].acl, req)
             if (candowiththisdic.watch == true) {
+                const broken_link = await getbroken(resp.rows[0].body)
                 const response = await axios.post(
                     process.env.PARSER_SERVER,
                     JSON.parse(
-                      `{"contents":${JSON.stringify(resp.rows[0].body).replace('"', '"')}}`
+                      `{"contents":${JSON.stringify(resp.rows[0].body).replace('"', '"')},"broken_links":${JSON.stringify(broken_link)}}`
                     )
                   );
                 res.json({message:"suc", body:response.data, log:resp.rows[0].log, modifiedtime:resp.rows[0].modifiedtime,author:resp.rows[0].author})

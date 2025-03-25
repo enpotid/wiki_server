@@ -260,7 +260,7 @@ fn triple_wiki (full:&str, content:&str, buffer:&mut String, isdark:bool) {
 }
 fn triple_folding (full:&str, content:&str, buffer:&mut String) {
     let (title, body) = content.split_once("\n").unwrap_or_default();
-    let parsed = parse(body, vec![]);
+    let parsed = parse(&format!("\n{}\n", body), vec![]);
     *buffer = buffer.replacen(full, format!("<dl><dt style=\"cursor: pointer;\" onclick=\"toggleDD()\">{}</dt><dd style=\"display:none\">{}</dd></dl>", title, parsed).as_str(), 1); 
 }
 fn nowiki(input: &str) -> Vec<String> {
