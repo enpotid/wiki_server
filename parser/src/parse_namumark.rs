@@ -11,10 +11,15 @@ pub fn parse_first(contents:&str, buffer:&mut String, links:Vec<bool>) {
     let isdark = true;
     parse_comment(buffer);
     parse_triple(buffer, isdark);
+    println!("hi1");
     parse_header(buffer);
+    println!("hi2");
     parse_backslash(buffer);
+    println!("hi3");
     parse_link(buffer, links);
+    println!("hi4");
     parse_table(buffer);
+    println!("hi5");
     *buffer = buffer.replace("[펼접]", "[ 펼치기 · 접기 ]")
 }
 fn parse_table (buffer:&mut String) {
@@ -151,6 +156,7 @@ fn parse_comment (buffer:&mut String) {
     }
 }
 fn parse_triple (buffer:&mut String, isdark:bool) {
+    println!("hi");
     //전에 만들었던 inline_parser쓰는것이 성능이 더 좋을수도. 재귀 쓸꺼임
     let mut binding = buffer.clone();
     /*for a in nowiki(&binding.clone()) {
@@ -238,6 +244,8 @@ fn parse_triple (buffer:&mut String, isdark:bool) {
 }
 fn triple_wiki (full:&str, content:&str, buffer:&mut String, isdark:bool) {
     let (attr, body) = content.split_once("\n").unwrap_or_default();
+    print!("{}", body);
+    let parsed = parse(&format!("\n{}\n", body), vec![]);
     let mut style = "";
     let mut atttr = String::from(" ");
     atttr.push_str(attr);
@@ -255,7 +263,7 @@ fn triple_wiki (full:&str, content:&str, buffer:&mut String, isdark:bool) {
             style = result.unwrap().get(1).unwrap().as_str();
         }
     }
-    *buffer = buffer.replacen(full, format!("<div style=\"{}\">{}</div>", style, body).as_str(), 1); 
+    *buffer = buffer.replacen(full, format!("<div style=\"{}\">{}</div>", style, parsed).as_str(), 1); 
 }
 fn triple_folding (full:&str, content:&str, buffer:&mut String) {
     let (title, body) = content.split_once("\n").unwrap_or_default();
