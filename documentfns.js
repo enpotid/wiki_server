@@ -1,3 +1,5 @@
+const { sql } = require("./ConnectDB")
+
 async function getbroken (body) {
     let regex = /\[\[(((?!\[\[|\]\]|\n).|\n)*)\]\]/g
     let result = []
