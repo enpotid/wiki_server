@@ -2,6 +2,7 @@ use fancy_regex::{Captures, Regex};
 pub fn parse (contents:&str, links:Vec<bool>, namespace:&str, title:&str) -> std::string::String {
     let mut rendered =String::from(contents);
     parse_first(&mut rendered, links, namespace, title);
+    rendered = rendered[1..rendered.len()-1].to_owned();
     return rendered.replace("\n", "<br>");
 }
 pub fn parse_first(buffer:&mut String, links:Vec<bool>, ns:&str, title:&str) {
