@@ -38,13 +38,16 @@ fn parse_table (buffer:&mut String) {
                     } else if e.starts_with("|") {
                         rowspan = &e[1..];
                     } else if e.starts_with("bgcolor=") {
-                        style.push_str(&format!("background:{}", &e[8..]));
+                        style.push_str(&format!("background:{}; ", &e[8..]));
                     } else if e.starts_with("width=") { //magic numbers!
                         style.push_str(&format!("width:{}", &e[6..]));
                     }
                 }
             }
+            if cap.get(4).unwrap().as_str().starts_with(" ") && cap.get(4).unwrap().as_str().ends_with(" ") {style.push_str("text-align:center; ");}
+            if cap.get(4).unwrap().as_str().starts_with(" ") && !cap.get(4).unwrap().as_str().ends_with(" ") {style.push_str("text-align:right; ");}
             attr.push_str(&format!("colspan=\"{}\" ", &colspan));
+            if style.is_empty() != true {attr.push_str(&format!("style=\"{}\"", &style));}
             if rowspan != "" {
                 attr.push_str(&format!("rowspan=\"{}\" ", rowspan));
             }
