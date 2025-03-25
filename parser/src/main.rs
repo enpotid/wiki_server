@@ -12,7 +12,9 @@ use warp::Filter;
 #[derive(Debug, Deserialize, Serialize)]
 struct RequestData {
     contents: String,
-    broken_links:Vec<bool>
+    broken_links:Vec<bool>,
+    title:String,
+    namespace:String
 }
 // 파서 리뉴얼할꺼임
 #[tokio::main]
@@ -26,7 +28,9 @@ async fn main() -> std::io::Result<()> {
             // 받은 contents를 처리하는 로직
             let contents = data.contents;
             let links = data.broken_links;
-            let parsed = parse_namumark::parse(&format!("\n{}\n", &contents),links);
+            let title = data.title;
+            let namespace = data.namespace;
+            let parsed = parse_namumark::parse(&format!("\n{}\n", &contents),links, &namespace, &title);
             warp::reply::json(&parsed)
         });
 

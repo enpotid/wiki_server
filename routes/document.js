@@ -23,7 +23,7 @@ app.get(`/:namespace/:docname`, async (req, res) => {
       const response = await axios.post(
         process.env.PARSER_SERVER,
         JSON.parse(
-          `{"contents":${JSON.stringify(document.rows[0].body).replace('"', '"')},"broken_links":${JSON.stringify(broken_link)}}`
+          `{"contents":${JSON.stringify(document.rows[0].body).replace('"', '"')},"broken_links":${JSON.stringify(broken_link)},"title":"${docname}","namespace":"${namespace}"}`
         )
       );
       res.json({content:response.data,candowiththisdoc:cando,acl:documentinfo.rows[0].acl});

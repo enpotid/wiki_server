@@ -1,24 +1,21 @@
-use std::{io::{stdin, stdout, Write}, ptr::null, result};
-
 use fancy_regex::{Captures, Regex};
-use warp::filters::method::head;
-pub fn parse (contents:&str, links:Vec<bool>) -> std::string::String {
+pub fn parse (contents:&str, links:Vec<bool>, namespace:&str, title:&str) -> std::string::String {
     let mut rendered =String::from(contents);
-    parse_first(contents, &mut rendered, links);
+    parse_first(&mut rendered, links, namespace, title);
     return rendered.replace("\n", "<br>");
 }
-pub fn parse_first(contents:&str, buffer:&mut String, links:Vec<bool>) {
+pub fn parse_first(buffer:&mut String, links:Vec<bool>, ns:&str, title:&str) {
     let isdark = true;
     parse_comment(buffer);
-    parse_triple(buffer, isdark);
+    parse_triple(buffer, isdark, ns, title);
     parse_header(buffer);
     parse_backslash(buffer);
-    parse_link(buffer, links);
+    parse_link(buffer, links, ns, title);
     parse_table(buffer);
     *buffer = buffer.replace("[펼접]", "[ 펼치기 · 접기 ]")
 }
 fn parse_table (buffer:&mut String) {
-    let mut binding: String = buffer.clone();
+    let binding: String = buffer.clone();
     let mut st: String = String::from("<tr>");
     let reg = Regex::new(r"\n((?:(?:(?:(?:\|\|)+)|(?:\|[^|]+\|(?:\|\|)*))\n?(?:(?:(?!\|\|).)+))(?:(?:\|\||\|\|\n|(?:\|\|)+(?!\n)(?:(?:(?!\|\|).)+)\n*)*)\|\|)\n").unwrap(); //real magic
     for cap in reg.captures_iter(&binding) {
@@ -28,7 +25,6 @@ fn parse_table (buffer:&mut String) {
             let cap = cap.unwrap();
             let mut colspan = (cap.get(2).unwrap().as_str().len()/2).to_string();
             let mut rowspan = "";
-            let mut align:&str;
             let mut style = String::new();
             let mut attr = String::new();
             let str = cap.get(3).unwrap().as_str();
@@ -60,7 +56,7 @@ fn parse_table (buffer:&mut String) {
         *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("<table>{}</table>", st), 1);
     }
 }
-fn parse_link (buffer:&mut String, links:Vec<bool>) {
+fn parse_link (buffer:&mut String, links:Vec<bool>, ns:&str, title:&str) {
     let re = Regex::new(r"\[\[(((?!\[\[|\]\]|\n).|\n)*)\]\]").unwrap();
     let mut i = 0;
     while links.len() > i {
@@ -73,17 +69,22 @@ fn parse_link (buffer:&mut String, links:Vec<bool>) {
                 Some((b, a)) => {
                     if b.starts_with("https://") || b.starts_with("http://") {
                         *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("<a style=\"color:green\" href=\"{}\"><span>(外)</span>{}</a>", b, a), 1)
-                    }
-                    else if links[i] == false {
+                    } else if links[i] == false {
                         *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("<a style=\"color:red;\" href=\"/w/{}\">{}</a>", b, a), 1)
+                    } else if b == format!("{}:{}",ns, title) {
+                        *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("<b><a href=\"/w/{}\">{}</a></b>", b, a), 1)
                     } else {
                         *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("<a href=\"/w/{}\">{}</a>", b, a), 1)
                     }
                     
                 },
                 None => {
-                    if links[i] == false {
+                    if a.starts_with("https://") || a.starts_with("http://") {
+                        *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("<a style=\"color:green\" href=\"{}\"><span>(外)</span>{}</a>", a, a), 1)
+                    } else if links[i] == false {
                         *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("<a style=\"color:red\" href=\"/w/{}\">{}</a>", a, a), 1)
+                    } else if a == format!("{}:{}",ns, title) {
+                        *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("<b><a href=\"/w/{}\">{}</a></b>", a, a), 1)
                     } else {
                         *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("<a href=\"/w/{}\">{}</a>", a, a), 1)
                     }
@@ -98,7 +99,6 @@ fn parse_link (buffer:&mut String, links:Vec<bool>) {
 fn parse_header(buffer:&mut String) {
     let re = Regex::new(r"((={1,6})(#?) ?([^\n]+) \3\2)").unwrap();
     let binding = buffer.clone();
-    let mut i:usize = 0;
         let mut ans: Vec<String> = Vec::new();
         let mut maxes: Vec<usize> = Vec::new();
         let mut max = 1;
@@ -107,7 +107,6 @@ fn parse_header(buffer:&mut String) {
         let result = re.captures_iter(&binding);
         for captures in result {
             let mut divs = String::new();
-            i += 1;
             let cap = captures.unwrap();
             let level = cap.get(2).unwrap().as_str().len();
             let mut fold = "block";
@@ -150,7 +149,7 @@ fn parse_comment (buffer:&mut String) {
         *buffer = buffer.replace(capture.unwrap().get(0).unwrap().as_str(), "")
     }
 }
-fn parse_triple (buffer:&mut String, isdark:bool) {
+fn parse_triple (buffer:&mut String, isdark:bool, ns:&str, title:&str) {
     //전에 만들었던 inline_parser쓰는것이 성능이 더 좋을수도. 재귀 쓸꺼임
     let mut binding = buffer.clone();
     /*for a in nowiki(&binding.clone()) {
@@ -172,7 +171,6 @@ fn parse_triple (buffer:&mut String, isdark:bool) {
         looploop = false;
         for captures in result {
             let cap = captures.unwrap();
-            stdout().flush();
             let triplename = cap.get(1).unwrap().as_str();
             if triplename == "#!light" {
                 if isdark == false {
@@ -187,9 +185,9 @@ fn parse_triple (buffer:&mut String, isdark:bool) {
                     binding = binding.replacen(cap.get(0).unwrap().as_str(), "", 1)
                 }
             } else if triplename == "#!wiki" {
-                triple_wiki(cap.get(0).unwrap().as_str(), cap.get(3).unwrap().as_str(), &mut binding, isdark/*나중에 바꿀 예정... 근데 개귀찮 */);
+                triple_wiki(cap.get(0).unwrap().as_str(), cap.get(3).unwrap().as_str(), &mut binding, isdark, ns, title/*나중에 바꿀 예정... 근데 개귀찮 */);
             } else if triplename == "#!folding" {
-                triple_folding(cap.get(0).unwrap().as_str(), cap.get(3).unwrap().as_str(), &mut binding)
+                triple_folding(cap.get(0).unwrap().as_str(), cap.get(3).unwrap().as_str(), &mut binding, ns, title)
             } else if triplename == "#!math" {
                 binding = binding.replacen(cap.get(0).unwrap().as_str(), "Wow you'are good at math!{{{#248790 \"math is not good at our health...\"}}}", 1)
             }  else if triplename == "+1" {
@@ -236,9 +234,9 @@ fn parse_triple (buffer:&mut String, isdark:bool) {
     }
     *buffer = binding;
 }
-fn triple_wiki (full:&str, content:&str, buffer:&mut String, isdark:bool) {
+fn triple_wiki (full:&str, content:&str, buffer:&mut String, isdark:bool, ns:&str, title:&str) {
     let (attr, body) = content.split_once("\n").unwrap_or_default();
-    let parsed = parse(&format!("\n{}\n", body), vec![]);
+    let parsed = parse(&format!("\n{}\n", body), vec![], ns, title);
     let mut style = "";
     let mut atttr = String::from(" ");
     atttr.push_str(attr);
@@ -258,12 +256,13 @@ fn triple_wiki (full:&str, content:&str, buffer:&mut String, isdark:bool) {
     }
     *buffer = buffer.replacen(full, format!("<div style=\"{}\">{}</div>", style, parsed).as_str(), 1); 
 }
-fn triple_folding (full:&str, content:&str, buffer:&mut String) {
+fn triple_folding (full:&str, content:&str, buffer:&mut String, ns:&str, titlee:&str) {
     let (title, body) = content.split_once("\n").unwrap_or_default();
-    let parsed = parse(&format!("\n{}\n", body), vec![]);
+    let parsed = parse(&format!("\n{}\n", body), vec![], ns, titlee);
     *buffer = buffer.replacen(full, format!("<dl><dt style=\"cursor: pointer;\" onclick=\"toggleDD()\">{}</dt><dd style=\"display:none\">{}</dd></dl>", title, parsed).as_str(), 1); 
 }
 fn nowiki(input: &str) -> Vec<String> {
+    let _ = input;
     let result: Vec<String> =  Vec::new();
     result
     //뭐 나중에 구현할 예정
