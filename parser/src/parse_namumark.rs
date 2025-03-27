@@ -60,6 +60,7 @@ fn parse_table (buffer:&mut String) {
         let cap: Captures<'_> = cap.unwrap();
         for cap in rege.captures_iter(cap.get(0).unwrap().as_str()) {
             let cap = cap.unwrap();
+            println!("{}", cap.get(4).unwrap().as_str());
             let mut colspan = (cap.get(2).unwrap().as_str().len()/2).to_string();
             let mut rowspan = "";
             let mut style = String::new();
@@ -188,7 +189,7 @@ fn parse_header(buffer:&mut String) {
                 , divs, level,  contextid,contextid.clone(), contextid, title, contextid, fold), 1);
         }
     }
-    context.push_str("</ul>");
+    context.push_str("</ul>\n");
     if !(buffer.contains("[nocontext]") ||
        buffer.contains("[목차제거]"))
     {
