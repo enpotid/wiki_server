@@ -1,4 +1,5 @@
 use fancy_regex::{Captures, Regex};
+use warp::filters::method::head;
 pub fn parse (contents:&str, links:Vec<bool>, namespace:&str, title:&str) -> std::string::String {
     let mut rendered =String::from(contents);
     parse_first(&mut rendered, links, namespace, title);
@@ -13,12 +14,47 @@ pub fn parse_first(buffer:&mut String, links:Vec<bool>, ns:&str, title:&str) {
     parse_backslash(buffer);
     parse_link(buffer, links, ns, title);
     parse_table(buffer);
+    parse_reference(buffer);
     *buffer = buffer.replace("[펼접]", "[ 펼치기 · 접기 ]")
+}
+fn parse_reference(buffer:&mut String) {
+    let regex = Regex::new(r"\[\*((?:(?! ).)*)? ((?:(?!(?:\[|\])).)*)\]|\[각주\]").unwrap();
+    let mut refnum = 1;
+    let mut lastref = 1;
+    let mut refs:Vec<&str> = Vec::new();
+    let binding = buffer.clone();
+    for cap in regex.captures_iter(&binding) {
+        let cap = cap.unwrap();
+        if cap.get(0).unwrap().as_str() == "[각주]" {
+            let mut reference = String::new();
+            for i in lastref..refnum {
+                reference.push_str(&format!("<div tabindex=\"0\" id=\"r{}\" class=\"caki-reference\"><a href=\"#br{}\">[{}]</a><div>", i, i, i));
+            }
+            *buffer = buffer.replacen("[각주]", &reference, 1);
+            lastref = refnum
+        } else {
+            let name = cap.get(1).unwrap().as_str();
+            let content = cap.get(2).unwrap().as_str();
+            if name == "" {
+                *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("<sup><a id=\"br{}\" href=\"#r{}\">[{}]</a></sup>", refnum, refnum, refnum), 1);
+                refs.push(content);
+                refnum += 1;
+            } 
+        }
+    }
+    let mut reference = String::new();
+    for i in lastref..refnum {
+        reference.push_str(&format!("<div id=\"r{}\" tabindex=\"0\" class=\"caki-reference\"><a href=\"#br{}\">[{}]</a> {}</div>", i, i, i, refs[i-1]));
+    }
+    reference.push_str("\n");
+    let mut binding2 = buffer.clone();
+    binding2.push_str(&reference);
+    *buffer =binding2;
 }
 fn parse_table (buffer:&mut String) {
     let binding: String = buffer.clone();
     let mut st: String = String::from("<tr>");
-    let reg = Regex::new(r"\n((?:(?:(?:(?:\|\|)+)|(?:\|[^|]+\|(?:\|\|)*))\n?(?:(?:(?!\|\|).)+))(?:(?:\|\||\|\|\n|(?:\|\|)+(?!\n)(?:(?:(?!\|\|).)+)\n*)*)\|\|)\n").unwrap(); //real magic
+    let reg = Regex::new(r"\n((?:\|\|)+((?!\n\n)[\s\S])+\|\|\n)+").unwrap(); //오픈나무 코드 읽기 힘들어서 그냥 내가 만듦
     for cap in reg.captures_iter(&binding) {
         let rege: Regex = Regex::new(r"(\n?)((?:\|\|)+)((?:<(?:(?:(?!<|>).)+)>)*)((?:\n*(?:(?:(?:(?!\|\|).)+)\n*)+)|(?:(?:(?!\|\|).)*))").unwrap();
         let cap: Captures<'_> = cap.unwrap();
@@ -57,7 +93,7 @@ fn parse_table (buffer:&mut String) {
                 st.push_str(&format!("<td {}>{}</td>",attr, cap.get(4).unwrap().as_str()));
             }
         }
-        *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("<table>{}</table>", st), 1);
+        *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("\n<table style=\"display:inline-block\">{}</table>\n", st), 1);
     }
 }
 fn parse_link (buffer:&mut String, links:Vec<bool>, ns:&str, title:&str) {
@@ -101,6 +137,8 @@ fn parse_link (buffer:&mut String, links:Vec<bool>, ns:&str, title:&str) {
     
 }
 fn parse_header(buffer:&mut String) {
+    let mut levelstrek = 1;
+    let mut context = String::from("<ul>");
     let re = Regex::new(r"((={1,6})(#?) ?([^\n]+) \3\2)").unwrap();
     let binding = buffer.clone();
         let mut ans: Vec<String> = Vec::new();
@@ -132,18 +170,40 @@ fn parse_header(buffer:&mut String) {
                 maxes = maxes[..level].to_vec();
             }
             max = level;
+            if levelstrek != level {
+                context.push_str(&format!("<li class=\"caki-context-level-{}\"><a href=\"#h{}\">{}</a> {}</li>", level, contextid, contextid, title));
+                levelstrek = level
+            }
             for stackpoint in level..7 {
                 if headerstack[stackpoint-1] == true {
                     headerstack[stackpoint-1] = false;
                     divs.push_str("</div>");
                 }
             }
+            ;
             headerstack[level-1] = true;
+            
                 *buffer = buffer.replacen(cap.get(1).unwrap().as_str(), &format!(
-                    "{}<h{} class=\"caki_header\" onclick=\"foldUnfoldHeader('{}')\"><a>{}.</a>　{}</h1><div id=\"{}\" style=\"display:{}\">"
-                , divs, level, contextid.clone(), contextid, title, contextid, fold), 1);
+                    "{}<h{} id=\"h{}\" class=\"caki_header\" onclick=\"foldUnfoldHeader('{}')\"><a>{}.</a>　{}</h1><div id=\"{}\" style=\"display:{}\">"
+                , divs, level,  contextid,contextid.clone(), contextid, title, contextid, fold), 1);
         }
     }
+    context.push_str("</ul>");
+    if !(buffer.contains("[nocontext]") ||
+       buffer.contains("[목차제거]"))
+    {
+        if buffer.contains("[목차]") || buffer.contains("[context]") {
+            *buffer = buffer
+            .replace("[목차]", &context)
+            .replace("[context]", &context)
+        } else {
+            context.push_str(&buffer[1..]);
+            context.insert_str(0, "\n");
+            *buffer = context;
+        }
+    }
+    
+    
 }
 fn parse_comment (buffer:&mut String) {
     let re = Regex::new(r"\n((##|//)[^\n]+|(/\*[^\*/]+\*/))").unwrap();
