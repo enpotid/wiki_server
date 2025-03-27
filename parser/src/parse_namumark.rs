@@ -54,7 +54,7 @@ fn parse_reference(buffer:&mut String) {
 fn parse_table (buffer:&mut String) {
     let binding: String = buffer.clone();
     let mut st: String = String::from("<tr>");
-    let reg = Regex::new(r"\n((?:\|\|)+((?!\n\n)[\s\S])+\|\|\n)+").unwrap(); //오픈나무 코드 읽기 힘들어서 그냥 내가 만듦
+    let reg = Regex::new(r"\n((?:\|\|)+((?!\n\n\|\|)[\s\S])+\|\|\n)+").unwrap(); //오픈나무 코드 읽기 힘들어서 그냥 내가 만듦
     for cap in reg.captures_iter(&binding) {
         let rege: Regex = Regex::new(r"(\n?)((?:\|\|)+)((?:<(?:(?:(?!<|>).)+)>)*)((?:\n*(?:(?:(?:(?!\|\|).)+)\n*)+)|(?:(?:(?!\|\|).)*))").unwrap();
         let cap: Captures<'_> = cap.unwrap();
