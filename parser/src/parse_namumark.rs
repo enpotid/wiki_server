@@ -15,7 +15,15 @@ pub fn parse_first(buffer:&mut String, links:Vec<bool>, ns:&str, title:&str) {
     parse_link(buffer, links, ns, title);
     parse_table(buffer);
     parse_reference(buffer);
+    parse_list(buffer);
     *buffer = buffer.replace("[펼접]", "[ 펼치기 · 접기 ]")
+}
+fn parse_list(buffer:&mut String) {
+    let regex = Regex::new(r"(?:\n(?: *)\*(?:.*))+").unwrap();
+    for cap in regex.find_iter(&buffer) {
+        let cap = cap.unwrap();
+        println!("{}", cap.as_str())
+    }
 }
 fn parse_reference(buffer:&mut String) {
     let regex = Regex::new(r"\[\*((?:(?! ).)*)? ((?:(?!(?:\[|\])).)*)\]|\[각주\]").unwrap();
@@ -57,10 +65,12 @@ fn parse_table (buffer:&mut String) {
     let reg = Regex::new(r"\n((?:\|\|)+((?!\n\n\|\|)[\s\S])+\|\|\n)+").unwrap(); //오픈나무 코드 읽기 힘들어서 그냥 내가 만듦
     for cap in reg.captures_iter(&binding) {
         let rege: Regex = Regex::new(r"(\n?)((?:\|\|)+)((?:<(?:(?:(?!<|>).)+)>)*)((?:\n*(?:(?:(?:(?!\|\|).)+)\n*)+)|(?:(?:(?!\|\|).)*))").unwrap();
+        // 원본 코드에서는 table_sub_regex이던데 과연
+        //table-substract일까 아님
+        //table-sub (서브)일까...
         let cap: Captures<'_> = cap.unwrap();
         for cap in rege.captures_iter(cap.get(0).unwrap().as_str()) {
             let cap = cap.unwrap();
-            println!("{}", cap.get(4).unwrap().as_str());
             let mut colspan = (cap.get(2).unwrap().as_str().len()/2).to_string();
             let mut rowspan = "";
             let mut style = String::new();
