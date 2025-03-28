@@ -1,5 +1,5 @@
 use fancy_regex::{Captures, Regex};
-use warp::filters::method::head;
+use warp::filters::{body::form, method::head};
 pub fn parse (contents:&str, links:Vec<bool>, namespace:&str, title:&str) -> std::string::String {
     let mut rendered =String::from(contents);
     parse_first(&mut rendered, links, namespace, title);
@@ -20,9 +20,41 @@ pub fn parse_first(buffer:&mut String, links:Vec<bool>, ns:&str, title:&str) {
 }
 fn parse_list(buffer:&mut String) {
     let regex = Regex::new(r"(?:\n(?: *)\*(?:.*))+").unwrap();
-    for cap in regex.find_iter(&buffer) {
+    let rege = Regex::new(r"( *)\*(.*)").unwrap();
+    let binding = buffer.clone();
+    for cap in regex.find_iter(&binding) {
+        let mut lastlevel: usize = 0;
         let cap = cap.unwrap();
-        println!("{}", cap.as_str())
+        let mut result = String::new();
+        for lin in cap.as_str().lines() {
+            for cap in rege.captures_iter(lin) {
+                let cap = cap.unwrap();
+                let level: usize = cap.get(1).unwrap().as_str().len();
+                let content = cap.get(2).unwrap().as_str();
+                
+                if lastlevel == level {
+                    result.push_str(&format!("<li>{}</li>", content));
+                } else {
+                    if lastlevel > level {
+                        for _ in level..lastlevel {
+                            result.push_str("</ul>");
+                        }
+                        result.push_str(&format!("<li>{}</li>", content));
+                    } else {
+                        for _ in lastlevel..level {
+                            result.push_str("<ul>");
+                        }
+                        result.push_str(&format!("<li>{}</li>", content));
+                    }
+                    lastlevel = level
+                }
+            }
+        }
+        for _ in 0..lastlevel {
+            result.push_str("</ul>");
+        }
+        
+        *buffer = buffer.replacen(cap.as_str(), &format!("<ul>{}</ul>", &result), 1)
     }
 }
 fn parse_reference(buffer:&mut String) {
@@ -149,7 +181,7 @@ fn parse_link (buffer:&mut String, links:Vec<bool>, ns:&str, title:&str) {
 }
 fn parse_header(buffer:&mut String) {
     let mut levelstrek = 1;
-    let mut context = String::from("<ul>");
+    let mut context = String::from("<ul class=\"caki-context-box\">");
     let re = Regex::new(r"((={1,6})(#?) ?([^\n]+) \3\2)").unwrap();
     let binding = buffer.clone();
         let mut ans: Vec<String> = Vec::new();
