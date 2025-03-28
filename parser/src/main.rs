@@ -5,7 +5,7 @@ use dotenv::dotenv;
 //IP3=127
 //IP4=127
 //PORT=24879
-use std::env;
+use std::{env, iter::Inspect, time::Instant};
 mod parse_namumark;
 use serde::{Deserialize, Serialize};
 use warp::Filter;
@@ -25,12 +25,14 @@ async fn main() -> std::io::Result<()> {
         .and(warp::path("process"))
         .and(warp::body::json()) // JSON 형태로 데이터를 받음
         .map(|data: RequestData| {
+            let start = Instant::now();
             // 받은 contents를 처리하는 로직
             let contents = data.contents;
             let links = data.broken_links;
             let title = data.title;
             let namespace = data.namespace;
             let parsed = parse_namumark::parse(&format!("\n{}\n", &contents),links, &namespace, &title);
+            println!("parsed:{:?}", start.elapsed());
             warp::reply::json(&parsed)
         });
 

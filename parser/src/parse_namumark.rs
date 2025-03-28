@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use fancy_regex::{Captures, Regex};
 use warp::filters::{body::form, method::head};
 pub fn parse (contents:&str, links:Vec<bool>, namespace:&str, title:&str) -> std::string::String {
@@ -16,7 +18,20 @@ pub fn parse_first(buffer:&mut String, links:Vec<bool>, ns:&str, title:&str) {
     parse_table(buffer);
     parse_reference(buffer);
     parse_list(buffer);
+    parse_markup(buffer);
     *buffer = buffer.replace("[펼접]", "[ 펼치기 · 접기 ]")
+}
+fn parse_markup(buffer:&mut String) {
+    parse_markup_bold(buffer);
+}
+fn parse_markup_bold(buffer:&mut String) {
+    let binding = buffer.clone();
+    let bold_regex = Regex::new(r"'''((?:(?!''').)+)'''").unwrap();
+    for cap in bold_regex.captures_iter(&binding) {
+        let cap = cap.unwrap();
+        *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), 
+        &format!("<b>{}</b>", cap.get(1).unwrap().as_str()), 1)
+    }
 }
 fn parse_list(buffer:&mut String) {
     let regex = Regex::new(r"(?:\n(?: *)\*(?:.*))+").unwrap();
