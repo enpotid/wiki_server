@@ -15,7 +15,7 @@ app.get(`/:namespace/:docname`, async (req, res) => {
   const documentinfo = await sql.query(`SELECT * FROM doc WHERE title=$1 AND namespace=$2`, [docname, namespace])
   if (documentinfo.rowCount === 0) {return res.status(404).json({content:"Document not found", candowiththisdoc:{edit:false, watch:false, acl:false}});}
   const document = await sql.query(`SELECT * FROM history WHERE title=$1 AND namespace=$2 AND rev=$3`, [docname, namespace, documentinfo.rows[0].lastrev])
-  let cando = (await candowiththisdoc(documentinfo.rows[0].acl, req))
+  let cando = (await candowiththisdoc(docname, namespace, req))
   canwatch = cando.watch
   if (canwatch) {
     const broken_link = await getbroken(document.rows[0].body)
@@ -44,7 +44,7 @@ app.post(`/:namespace/:docname`, async (req, res) => {
   let author = ((req.session.info != undefined) ? (req.session.info.name) : (body.author))
   if (resp2.rows.length != 0) {
         if (body.method == "acl") {
-          if ((await candowiththisdoc(resp2.rows[0].acl, req)).acl == true) {
+          if ((await candowiththisdoc(title, req.params.namespace, req)).acl == true) {
             sql.query(`UPDATE doc SET acl=$3 WHERE namespace=$1 AND title=$2`, [
               namespace,
               title,
@@ -54,7 +54,7 @@ app.post(`/:namespace/:docname`, async (req, res) => {
             res.send("No Perms")
           }
         } else if (body.method == "edit") {
-          if ((await candowiththisdoc(resp2.rows[0].acl, req)).edit == true) {
+          if ((await candowiththisdoc(title, req.params.namespace, req)).edit == true) {
             sql.query(`INSERT INTO history (namespace, title, rev, body, log, author) VALUES ($1, $2, $3, $4, $5, $6)`, [
               namespace,
               title,

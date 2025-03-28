@@ -11,11 +11,11 @@ app.post(`/new/:namespace/:document`, async (req, res) => {
     let namespace = req.params.namespace;
     let document = req.params.document;
     let author = (req.session.info == undefined ? (req.body.author) : (req.session.info.name))
+    let cando = await candowiththisdoc(document, namespace, req)
     const for_acl = await sql.query(`SELECT * FROM doc WHERE title=$1 AND namespace=$2`, [decodeURIComponent(document), decodeURIComponent(namespace)])
     if (for_acl.rowCount == 0) {
         res.status(404).send("not found")
     } else if (cando.make_talk == true) {
-        let cando = await candowiththisdoc(for_acl.rows[0].acl, req)
         let talkid = uuidv1()
         await sql.query(`INSERT INTO talks (namespace, title, talkid, talktitle, status) VALUES ($1, $2, $3, $4, $5)`, [namespace, document, talkid, req.body.talktitle, "open"])
         await sql.query(`INSERT INTO talk (talkid, type, body, author) VALUES ($1, $2, $3, $4)`, [talkid, "thread", req.body.body, author])
@@ -31,8 +31,7 @@ app.post(`/:chatid`, async (req, res) => {
         if (talk.rowCount == 0) {
             res.send("not found L")
         }
-        const for_acl = await sql.query(`SELECT acl FROM doc WHERE title=$1 AND namespace=$2`, [talk.rows[0].title, talk.rows[0].namespace])
-        let cando = await candowiththisdoc(for_acl.rows[0].acl, req)
+        let cando = await candowiththisdoc(talk.rows[0].title, talk.rows[0].namespace, req)
         if (cando.make_talk == true) {
             sql.query(`INSERT INTO talk (talkid, type, body, author) VALUES ($1, $2, $3, $4)`, [req.params.chatid, "thread", req.body.body, author])
         }

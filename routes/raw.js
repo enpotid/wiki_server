@@ -9,7 +9,7 @@ app.get(`/:namespace/:docname/`, async (req, res) => {
   if (for_acl.rowCount == 0) {return res.status(404).json({body:"Not Found"});}
   const documentinfo = await sql.query(`SELECT * FROM history WHERE title=$1 AND namespace=$2 AND rev=$3`, [docname, namespace, for_acl.rows[0].lastrev])
   if (req.session.info == undefined) {
-    if ((await candowiththisdoc(for_acl.rows[0].acl, req)).watch == true) {
+    if ((await candowiththisdoc(docname, namespace, req)).watch == true) {
       res.json({
         title: for_acl.rows[0].title,
         body: documentinfo.rows[0].body,
@@ -19,7 +19,7 @@ app.get(`/:namespace/:docname/`, async (req, res) => {
       res.json({body:"No perms", acl:JSON.stringify(for_acl.rows[0].acl)})
     }
   } else {
-    if ((await candowiththisdoc(for_acl.rows[0].acl, req)).watch == true) {
+    if ((await candowiththisdoc(docname, namespace, req)).watch == true) {
       res.json({
         title: documentinfo.rows[0].title,
         body: documentinfo.rows[0].body,
