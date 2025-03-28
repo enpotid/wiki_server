@@ -51,7 +51,7 @@ app.get(`/:namespace/:document/:rev`, async (req, res) => {
                     const response = await axios.post(
                     process.env.PARSER_SERVER,
                     JSON.parse(
-                      `{"contents":${JSON.stringify(resp.rows[0].body).replace('"', '"')},"broken_links":${JSON.stringify(broken_link)}}`
+                      `{"contents":${JSON.stringify(resp.rows[0].body).replace('"', '"')},"broken_links":${JSON.stringify(broken_link)},"title":"${document}","namespace":"${namespace}"}`
                     )
                   );
                 res.json({message:"suc", body:response.data, log:resp.rows[0].log, modifiedtime:resp.rows[0].modifiedtime,author:resp.rows[0].author})
@@ -68,7 +68,7 @@ app.get(`/:namespace/:document/:rev`, async (req, res) => {
                 const response = await axios.post(
                     process.env.PARSER_SERVER,
                     JSON.parse(
-                      `{"contents":${JSON.stringify(resp.rows[0].body).replace('"', '"')},"broken_links":${JSON.stringify(broken_link)}}`
+                      `{"contents":${JSON.stringify(resp.rows[0].body).replace('"', '"')},"broken_links":${JSON.stringify(broken_link)},"title":"${document}","namespace":"${namespace}"}`
                     )
                   );
                 res.json({message:"suc", body:response.data, log:resp.rows[0].log, modifiedtime:resp.rows[0].modifiedtime,author:resp.rows[0].author})
