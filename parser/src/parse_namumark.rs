@@ -2,17 +2,21 @@ use std::time::Instant;
 
 use fancy_regex::{Captures, Regex};
 use warp::filters::{body::form, method::head};
-pub fn parse (contents:&str, links:Vec<bool>, namespace:&str, title:&str) -> std::string::String {
+pub fn parse (contents:&str, links:Vec<bool>, namespace:&str, title:&str, debug:bool) -> std::string::String {
     let mut rendered =String::from(contents);
-    parse_first(&mut rendered, links, namespace, title);
+    parse_first(&mut rendered, links, namespace, title, debug);
     rendered = rendered[1..rendered.len()-1].to_owned();
     return rendered.replace("\n", "<br>");
 }
-pub fn parse_first(buffer:&mut String, links:Vec<bool>, ns:&str, title:&str) {
+pub fn parse_first(buffer:&mut String, links:Vec<bool>, ns:&str, title:&str, debug:bool) {
     let isdark = true;
     parse_comment(buffer);
+    let triple_time = Instant::now();
     parse_triple(buffer, isdark, ns, title);
-    parse_header(buffer);
+    if debug == true {
+        println!("{:?}", triple_time.elapsed());
+    }
+    //parse_header(buffer);
     parse_backslash(buffer);
     parse_link(buffer, links, ns, title);
     parse_table(buffer);
@@ -83,9 +87,10 @@ fn parse_reference(buffer:&mut String) {
         if cap.get(0).unwrap().as_str() == "[각주]" {
             let mut reference = String::new();
             for i in lastref..refnum {
-                reference.push_str(&format!("<div tabindex=\"0\" id=\"r{}\" class=\"caki-reference\"><a href=\"#br{}\">[{}]</a><div>", i, i, i));
+                reference.push_str(&format!("<div tabindex=\"0\" id=\"r{}\" class=\"caki-reference\"><a href=\"#br{}\">[{}]</a> {}</div>", i, i, i, refs[i-1]));
             }
             *buffer = buffer.replacen("[각주]", &reference, 1);
+            reference.clear();
             lastref = refnum
         } else {
             let name = cap.get(1).unwrap().as_str();
@@ -358,7 +363,7 @@ fn parse_triple (buffer:&mut String, isdark:bool, ns:&str, title:&str) {
 }
 fn triple_wiki (full:&str, content:&str, buffer:&mut String, isdark:bool, ns:&str, title:&str) {
     let (attr, body) = content.split_once("\n").unwrap_or_default();
-    let parsed = parse(&format!("\n{}\n", body), vec![], ns, title);
+    let parsed = parse(&format!("\n{}\n", body), vec![], ns, title, false);
     let mut style = "";
     let mut atttr = String::from(" ");
     atttr.push_str(attr);
@@ -380,7 +385,7 @@ fn triple_wiki (full:&str, content:&str, buffer:&mut String, isdark:bool, ns:&st
 }
 fn triple_folding (full:&str, content:&str, buffer:&mut String, ns:&str, titlee:&str) {
     let (title, body) = content.split_once("\n").unwrap_or_default();
-    let parsed = parse(&format!("\n{}\n", body), vec![], ns, titlee);
+    let parsed = parse(&format!("\n{}\n", body), vec![], ns, titlee, false);
     *buffer = buffer.replacen(full, format!("<dl><dt style=\"cursor: pointer;\" onclick=\"toggleDD()\">{}</dt><dd style=\"display:none\">{}</dd></dl>", title, parsed).as_str(), 1); 
 }
 fn nowiki(input: &str) -> Vec<String> {

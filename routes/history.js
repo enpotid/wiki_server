@@ -62,7 +62,7 @@ app.get(`/:namespace/:document/:rev`, async (req, res) => {
                 res.json({message:"hidden"})
             }
         } else {
-            let candowiththisdic = await candowiththisdoc(for_acl.rows[0].acl, req)
+            let candowiththisdic = await candowiththisdoc(document, namespace, req)
             if (candowiththisdic.watch == true) {
                 const broken_link = await getbroken(resp.rows[0].body)
                 const response = await axios.post(

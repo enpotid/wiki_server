@@ -13,6 +13,9 @@ async function candowiththisdoc (docname, ns, req) {
     } else {
         doc_acl = resp.rows[0].acl
     }
+    return cando_old(doc_acl, req)
+}
+function cando_old (doc_acl, req) {
     const perms = (req.session.info == undefined) ? ([]) : (req.session.info.permission)
     let acl_watch = doc_acl.watch;
     let acl_edit = doc_acl.edit;
@@ -62,4 +65,4 @@ async function candowiththisdoc (docname, ns, req) {
         }
     }
 }
-module.exports = {candowiththisdoc}
+module.exports = {candowiththisdoc, cando_old}

@@ -31,7 +31,7 @@ async fn main() -> std::io::Result<()> {
             let links = data.broken_links;
             let title = data.title;
             let namespace = data.namespace;
-            let parsed = parse_namumark::parse(&format!("\n{}\n", &contents),links, &namespace, &title);
+            let parsed = parse_namumark::parse(&format!("\n{}\n", &contents),links, &namespace, &title, true);
             println!("parsed:{:?}", start.elapsed());
             warp::reply::json(&parsed)
         });
