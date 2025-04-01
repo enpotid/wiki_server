@@ -11,7 +11,8 @@ const { getbroken } = require("../documentfns");
 app.use(express.json({ limit: '50mb' }));
 app.get(`/:namespace/:docname`, async (req, res) => {
   let docname = req.params.docname;
-  let namespace = req.params.namespace;
+  const ns = await sql.query(`SELECT * FROM namespace WHERE name=$1`, [req.params.namespace]);
+  let namespace = (ns.rowCount == 0 ? ("document") : (req.params.namespace));
   const documentinfo = await sql.query(`SELECT * FROM doc WHERE title=$1 AND namespace=$2`, [docname, namespace])
   if (documentinfo.rowCount === 0) {return res.status(404).json({content:"Document not found", candowiththisdoc:
     await candowiththisns(namespace, req)
@@ -39,15 +40,15 @@ app.get(`/:namespace/:docname`, async (req, res) => {
 });
 const index = meili.index(process.env.WIKINAME)
 app.post(`/:namespace/:docname`, async (req, res) => {
-  let title = req.params.docname;
   let body = req.body;
   const resp = await sql.query(`SELECT * FROM namespace WHERE name=$1`, [req.params.namespace,]);
   let namespace = (resp.rowCount == 0) ? ("document") : (req.params.namespace);
+  let title = (resp.rowCount == 0) ? (req.params.namespace+":"+req.params.docname) : (req.params.docname);;
   const resp2 = await sql.query(`SELECT * FROM doc WHERE title=$1 AND namespace=$2`, [title, namespace])
   let author = ((req.session.info != undefined) ? (req.session.info.name) : (body.author))
   if (resp2.rows.length != 0) {
         if (body.method == "acl") {
-          if ((await candowiththisdoc(title, req.params.namespace, req)).acl == true) {
+          if ((await candowiththisdoc(title, namespace, req)).acl == true) {
             sql.query(`UPDATE doc SET acl=$3 WHERE namespace=$1 AND title=$2`, [
               namespace,
               title,
@@ -57,7 +58,7 @@ app.post(`/:namespace/:docname`, async (req, res) => {
             res.send("No Perms")
           }
         } else if (body.method == "edit") {
-          if ((await candowiththisdoc(title, req.params.namespace, req)).edit == true) {
+          if ((await candowiththisdoc(title, namespace, req)).edit == true) {
             sql.query(`INSERT INTO history (namespace, title, rev, body, log, author) VALUES ($1, $2, $3, $4, $5, $6)`, [
               namespace,
               title,

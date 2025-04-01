@@ -29,12 +29,18 @@ app.post(`/:namespace`, async (req, res) => {
     if (req.body.method == "create") {
         if (req.session.info.permission.includes("owner") || req.session.info.permission.includes("nsmgr")) {
             try {
-                const before = await sql.query(`SELECT defaultacl FROM namespaces WHERE name=$1`, [req.params.namespace])
-                sql.query(`UPDATE namespaces SET defaultacl=$1 WHERE name=$2`, [req.body.acl, req.params.namespace])
-                sql.query(`INSERT INTO log (who, type, when, log) VALUES ($1, nsacl, CURRENT_TIMESTAMP, $2)`, [
-                    req.session.name,
-                    {before:before, after:req.body.acl, log:""}
-                ])
+                const resp = await sql.query(`SELECT * namespace WHERE name=$1`, [req.params.namespace])
+                if (resp.rows[0] == 1) {
+                    res.send("nop")
+                } else {
+                    sql.query(`INSERT INTO namespace (name) VALUES ($1)`, [req.params.namespace])
+                    sql.query(`INSERT INTO log (who, type, when, log) VALUES ($1, nsacl, CURRENT_TIMESTAMP, $2)`, [
+                        req.session.name,
+                        {before:before, after:req.body.acl, log:""}
+                    ])
+                    res.send("suc")
+                }
+                
             } catch (err) {
                 res.json({message:"not found"}) //다른 예외는 없겠지 뭐,
             }

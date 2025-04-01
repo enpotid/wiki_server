@@ -244,6 +244,11 @@ async function ChkDB() {
     console.log("위키의 기본 이름공간이 존제하지 않습니다. 기본 이름공간을 만들겠습니다.")
     await sql.query(`INSERT INTO namespace (name) VALUES ($1)`, ["file"])
   }
+  const res6 = await sql.query(`SELECT 1 FROM namespace WHERE name=$1`, ["document"])
+  if (res6.rowCount != 1) {
+    console.log("위키의 기본 이름공간이 존제하지 않습니다. 기본 이름공간을 만들겠습니다.")
+    await sql.query(`INSERT INTO namespace (name) VALUES ($1)`, ["document"])
+  }
   const res2 = await sql.query(`SELECT 1 FROM groups WHERE name=$1`, ["owner"])
   if (res2.rowCount != 1) {
     console.log("위키의 기본 사용자 그룹이 존제하지 않습니다. 기본 사용자 그룹을 만들겠습니다.")
