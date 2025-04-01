@@ -19,3 +19,5 @@ DB_DBNAME="ILYKIWI"
 SECRET="#248790ISTHEBESTCOLORTHATI'VEEVERSEEN(This IS SALT!)"
 PARSER_SERVER="http://127.248.79.0:34879/process"
 MEILISEARCH_API_KEY="caki"
+# 추천
+Img 폴더 내의 dummy! 파일이랑 temp 폴더에 있는 temporary 파일을 삭제하고 구동하는 것을 추천
