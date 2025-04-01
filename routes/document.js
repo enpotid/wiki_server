@@ -2,7 +2,7 @@ require("dotenv").config();
 const axios = require("axios");
 const express = require("express");
 const app = express.Router();
-const {candowiththisdoc} = require("../usermanager")
+const {candowiththisdoc, candowiththisns} = require("../usermanager")
 const { sql } = require("../ConnectDB");
 const { meili } = require("../meili");
 const SHA256 = require("crypto-js/sha256");
@@ -13,10 +13,13 @@ app.get(`/:namespace/:docname`, async (req, res) => {
   let docname = req.params.docname;
   let namespace = req.params.namespace;
   const documentinfo = await sql.query(`SELECT * FROM doc WHERE title=$1 AND namespace=$2`, [docname, namespace])
-  if (documentinfo.rowCount === 0) {return res.status(404).json({content:"Document not found", candowiththisdoc:{edit:false, watch:false, acl:false}});}
+  if (documentinfo.rowCount === 0) {return res.status(404).json({content:"Document not found", candowiththisdoc:
+    await candowiththisns(namespace, req)
+  });}
   const document = await sql.query(`SELECT * FROM history WHERE title=$1 AND namespace=$2 AND rev=$3`, [docname, namespace, documentinfo.rows[0].lastrev])
   let cando = (await candowiththisdoc(docname, namespace, req))
   canwatch = cando.watch
+  console.log(canwatch)
   if (canwatch) {
     const broken_link = await getbroken(document.rows[0].body)
     try {

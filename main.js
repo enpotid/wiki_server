@@ -13,6 +13,7 @@ ConnectDB();
 initmeili();
 const express = require("express");
 const session = require("express-session");
+const FileStore = require('session-file-store')(session);
 const app = express();
 require("dotenv").config();
 const document = require("./routes/document");
@@ -28,6 +29,7 @@ const history = require("./routes/history");
 const recentchanges = require("./routes/recentchanges")
 const thread = require("./routes/thread")
 const uploadrouter = require("./routes/upload")
+const namespace = require("./routes/namespace");
 const { spawn } = require("child_process");
 const { WebSocketServer } = require("ws");
 const http = require("http");
@@ -44,6 +46,11 @@ parser.stderr.on('data', (data) => {
 
 const serv = http.createServer(app);
 const sess = session({
+  store: new FileStore({
+    path: './sessions',      // 세션 파일을 저장할 디렉토리
+    ttl: 86400,              // 세션 유효 시간 (초 단위, 여기서는 1일)
+    retries: 0               // 파일 접근 실패 시 재시도 횟수
+  }),
   secret: process.env.SECRET,
   cookie: { secure: false, maxAge: 6000000 },
   saveUninitialized: false,
@@ -72,6 +79,7 @@ app.use("/history/", history)
 app.use("/recentchanges/", recentchanges)
 app.use("/thread/", thread)
 app.use("/upload/", uploadrouter)
+app.use("/namespace/", namespace)
 serv.listen(process.env.PORT, function () {
-  console.log('Listening on http://localhost:8080');
+  console.log(`Listening on http://localhost:${process.env.PORT}`);
 });
