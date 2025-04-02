@@ -10,9 +10,9 @@ const CryptoJS = require("crypto-js");
 const { getbroken } = require("../documentfns");
 app.use(express.json({ limit: '50mb' }));
 app.get(`/:namespace/:docname`, async (req, res) => {
-  let docname = req.params.docname;
   const ns = await sql.query(`SELECT * FROM namespace WHERE name=$1`, [req.params.namespace]);
   let namespace = (ns.rowCount == 0 ? ("document") : (req.params.namespace));
+  let docname = (ns.rowCount == 0 ? (req.params.namespace+":"+req.params.docname) : (req.params.docname));
   const documentinfo = await sql.query(`SELECT * FROM doc WHERE title=$1 AND namespace=$2`, [docname, namespace])
   if (documentinfo.rowCount === 0) {return res.status(404).json({content:"Document not found", candowiththisdoc:
     await candowiththisns(namespace, req)
@@ -20,7 +20,6 @@ app.get(`/:namespace/:docname`, async (req, res) => {
   const document = await sql.query(`SELECT * FROM history WHERE title=$1 AND namespace=$2 AND rev=$3`, [docname, namespace, documentinfo.rows[0].lastrev])
   let cando = (await candowiththisdoc(docname, namespace, req))
   canwatch = cando.watch
-  console.log(canwatch)
   if (canwatch) {
     const broken_link = await getbroken(document.rows[0].body)
     try {
