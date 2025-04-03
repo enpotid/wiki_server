@@ -186,6 +186,16 @@ fn parse_link (buffer:&mut String, links:Vec<bool>, ns:&str, title:&str) {
                         *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("<a style=\"color:green\" href=\"{}\"><span>(外)</span>{}</a>", a, a), 1)
                     } else if links[i] == false {
                         *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("<a style=\"color:red\" href=\"/w/{}\">{}</a>", a, a), 1)
+                    } else if a.starts_with("file:") {
+                        let parsed = a.split_once(":");
+                        match parsed {
+                            Some((b, a)) => {
+                                *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("<img src=\"/api/image/{}\">", a), 1)
+                            },
+                            None => {
+
+                            }
+                        }
                     } else if a == format!("{}:{}",ns, title) {
                         *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("<b><a href=\"/w/{}\">{}</a></b>", a, a), 1)
                     } else {
