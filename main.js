@@ -30,6 +30,7 @@ const recentchanges = require("./routes/recentchanges")
 const thread = require("./routes/thread")
 const uploadrouter = require("./routes/upload")
 const namespace = require("./routes/namespace");
+const image = require("./routes/image");
 const { spawn } = require("child_process");
 const { WebSocketServer } = require("ws");
 const http = require("http");
@@ -80,6 +81,7 @@ app.use("/recentchanges/", recentchanges)
 app.use("/thread/", thread)
 app.use("/upload/", uploadrouter)
 app.use("/namespace/", namespace)
+app.use("/image/", image)
 serv.listen(process.env.PORT, function () {
   console.log(`Listening on http://localhost:${process.env.PORT}`);
 });
