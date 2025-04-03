@@ -58,4 +58,13 @@ app.get(`/:nsname`, async (req, res) => {
     }
     
 })
+app.get(`/`, async (req, res) => {
+    try {
+        const resp = await sql.query(`SELECT * FROM namespace`)    
+        res.json(resp.rows)
+    } catch(e) {
+        res.status(500).send("oops")
+    }
+    
+})
 module.exports = app;
