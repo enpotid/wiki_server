@@ -16,10 +16,10 @@ pub fn parse_first(buffer:&mut String, links:Vec<bool>, ns:&str, title:&str, deb
     if debug == true {
         println!("{:?}", triple_time.elapsed());
     }
-    //parse_header(buffer);
+    parse_header(buffer);
     parse_backslash(buffer);
-    parse_link(buffer, links, ns, title);
     parse_table(buffer);
+    parse_link(buffer, links, ns, title);
     parse_reference(buffer);
     parse_list(buffer);
     parse_markup(buffer);
@@ -140,6 +140,8 @@ fn parse_table (buffer:&mut String) {
                         style.push_str(&format!("background:{}; ", &e[8..]));
                     } else if e.starts_with("width=") { //magic numbers!
                         style.push_str(&format!("width:{}", &e[6..]));
+                    } else if e == "nopad" { //magic numbers!
+                        style.push_str(&format!("padding:0px"));
                     }
                 }
             }
@@ -156,7 +158,7 @@ fn parse_table (buffer:&mut String) {
                 st.push_str(&format!("<td {}>{}</td>",attr, cap.get(4).unwrap().as_str()));
             }
         }
-        *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("\n<table style=\"display:inline-block\">{}</table>\n", st), 1);
+        *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("<table>{}</table>", &st[0..st.len() - 4]), 1);
     }
 }
 fn parse_link (buffer:&mut String, links:Vec<bool>, ns:&str, title:&str) {
@@ -174,6 +176,16 @@ fn parse_link (buffer:&mut String, links:Vec<bool>, ns:&str, title:&str) {
                         *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("<a style=\"color:green\" href=\"{}\"><span>(外)</span>{}</a>", b, a), 1)
                     } else if links[i] == false {
                         *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("<a style=\"color:red;\" href=\"/w/{}\">{}</a>", b, a), 1)
+                    } else if b.starts_with("file:") {
+                        let parsed = b.split_once(":");
+                        match parsed {
+                            Some((_, name)) => {
+                                *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("<img src=\"/api/image/{}\" {a} style=\"vertical-align: bottom;\">", name), 1)
+                            },
+                            None => {
+
+                            }
+                        }
                     } else if b == format!("{}:{}",ns, title) {
                         *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("<b><a href=\"/w/{}\">{}</a></b>", b, a), 1)
                     } else {
@@ -190,7 +202,7 @@ fn parse_link (buffer:&mut String, links:Vec<bool>, ns:&str, title:&str) {
                         let parsed = a.split_once(":");
                         match parsed {
                             Some((b, a)) => {
-                                *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("<img src=\"/api/image/{}\">", a), 1)
+                                *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("<img src=\"/api/image/{}\" style=\"vertical-align: bottom;\">", a), 1)
                             },
                             None => {
 
@@ -207,7 +219,6 @@ fn parse_link (buffer:&mut String, links:Vec<bool>, ns:&str, title:&str) {
             i += 1;
         }
     }
-    
 }
 fn parse_header(buffer:&mut String) {
     let mut levelstrek = 1;
