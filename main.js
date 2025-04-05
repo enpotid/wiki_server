@@ -32,7 +32,6 @@ const uploadrouter = require("./routes/upload")
 const namespace = require("./routes/namespace");
 const image = require("./routes/image");
 const { spawn } = require("child_process");
-const { WebSocketServer } = require("ws");
 const http = require("http");
 const { error } = require("console");
 const multer = require("multer");
@@ -57,7 +56,6 @@ const sess = session({
   saveUninitialized: false,
   resave: false,
 })
-const wss = new WebSocketServer({server:serv})
 app.use(
   sess
 );

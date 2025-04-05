@@ -5,10 +5,11 @@
   "scripts": {
     "dev": "nodemon main.js"
   },
-  "author": "",
+  "author": "caki",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@prisma/client": "^6.5.0",
     "axios": "^1.7.9",
     "crypto-js": "^4.2.0",
     "dotenv": "^16.4.7",
@@ -18,8 +19,8 @@
     "meilisearch": "^0.48.2",
     "multer": "^1.4.5-lts.2",
     "pg": "^8.13.1",
+    "prisma": "^6.5.0",
     "session-file-store": "^1.5.0",
-    "uuid": "^11.1.0",
-    "ws": "^8.18.1"
+    "uuid": "^11.1.0"
   }
 }

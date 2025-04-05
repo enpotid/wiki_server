@@ -1,0 +1,69 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model doc {
+  title     String
+  namespace String
+  lastrev   Int    @default(0)
+  acl       Json   @default("{}") @db.Json
+  uuid      String @id(map: "uuid") @db.Uuid
+}
+
+model groups {
+  name String @id
+}
+
+model history {
+  namespace    String
+  title        String
+  rev          Int      @default(0)
+  hidden       Boolean
+  body         String?
+  log          String?
+  modifiedtime DateTime @db.Timestamptz(6)
+  author       String
+  uuid         String   @id @db.Uuid
+}
+
+model log {
+  who  String
+  time DateTime @id @default(now()) @db.Timestamptz(6)
+  type String
+  log  Json     @db.Json
+}
+
+model namespace {
+  name       String @id
+  defaultacl Json?  @default("{}") @db.Json
+}
+
+model talk {
+  talkid String  @db.Uuid
+  type   String
+  body   String?
+  author String
+  uuid   String  @id @db.Uuid
+}
+
+model talks {
+  namespace String
+  title     String
+  id        String @id @db.Uuid
+  talktitle String
+  status    String
+}
+
+model users {
+  name        String    @id
+  password    String
+  createdtime DateTime? @default(now()) @db.Timestamptz(6)
+  user_group  Json?     @default("[{\"name\":\"user\", \"expire\":\"none\"}]") @db.Json
+  permission  Json?     @default("[\"\"]") @db.Json
+  setting     Json?     @default("{}") @db.Json
+}

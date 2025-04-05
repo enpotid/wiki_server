@@ -22,10 +22,12 @@ async function candowiththisdoc (docname, ns, req) {
     return cando_old(doc_acl, req)
 }
 async function candowiththisns (ns, req) {
-    const resp = await sql.query(`SELECT defaultacl from namespace WHERE name=$1`, 
-        [ns]
-    )
-    return cando_old(resp.rows[0].defaultacl, req)
+    const resp = await sql.namespace.findFirst({
+        where:{
+            name:ns
+        }
+    })
+    return cando_old(resp.defaultacl, req)
 }
 function cando_old (doc_acl, req) {
     const perms = (req.session.info == undefined) ? ([]) : (req.session.info.permission)
