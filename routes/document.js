@@ -8,6 +8,7 @@ const { meili } = require("../meili");
 const SHA256 = require("crypto-js/sha256");
 const CryptoJS = require("crypto-js");
 const { getbroken } = require("../documentfns");
+const {v1:uuidv1} = require("uuid")
 app.use(express.json({ limit: '50mb' }));
 app.get(`/:namespace/:docname`, async (req, res) => {
   const ns = await sql.namespace.findMany({
@@ -98,7 +99,8 @@ app.post(`/:namespace/:docname`, async (req, res) => {
                 rev:resp2[0].lastrev+1,
                 body:body.body,
                 log:body.log,
-                author:author
+                author:author,
+                uuid:uuidv1()
               }
             })
             await sql.doc.update({
@@ -123,13 +125,15 @@ app.post(`/:namespace/:docname`, async (req, res) => {
             title:title,
             body:body.body,
             log:body.log,
-            author:author
+            author:author,
+            uuid:uuidv1()
           }
         })
         await sql.doc.create({
           data:{
             title:title,
-            namespace:namespace
+            namespace:namespace,
+            uuid:uuidv1()
           }
         })
         let id = SHA256(namespace+":"+title).toString(
