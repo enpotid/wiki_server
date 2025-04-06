@@ -48,10 +48,10 @@ app.get(`/:namespace/:docname`, async (req, res) => {
       );
       res.json({content:response.data,candowiththisdoc:cando,acl:documentinfo[0].acl});
     } catch(err) {
-      res.json({content:err+"Parser server not working Σ(っ °Д °<span style='color:red;'>;</span>)っ connect to server administrator", acl:documentinfo.rows[0].acl,candowiththisdoc:cando})
+      res.json({content:err+"Parser server not working Σ(っ °Д °<span style='color:red;'>;</span>)っ connect to server administrator", acl:documentinfo[0].acl,candowiththisdoc:cando})
     }    
   } else {
-    res.json({content:"No perms",acl:documentinfo.acl,candowiththisdoc:cando})
+    res.json({content:"No perms",acl:documentinfo[0].acl,candowiththisdoc:cando})
   }
 });
 const index = meili.index(process.env.WIKINAME)
