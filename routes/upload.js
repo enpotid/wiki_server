@@ -5,6 +5,7 @@ const path = require("path");
 const { candowiththisdoc, cando_old } = require("../usermanager");
 const { sql } = require("../ConnectDB");
 const  fs  = require("fs");
+const { randomUUID } = require("crypto");
 app.use(express.json())
 const storage = multer.diskStorage({
     destination: (req, file, cibal) => {
@@ -30,7 +31,8 @@ app.post('/', upload.single('file'), auth, async (req, res) => {
         title:parsed.title,
         body:parsed.body,
         log:parsed.log,
-        author:author
+        author:author,
+        uuid:randomUUID()
       }
     })
 })
