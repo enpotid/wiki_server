@@ -90,14 +90,19 @@ app.get(`/:namespace/:document/:rev`, async (req, res) => {
         } else {
             let candowiththisdic = await candowiththisdoc(document, namespace, req)
             if (candowiththisdic.watch == true) {
-                const broken_link = await getbroken(resp.body)
-                const response = await axios.post(
-                    process.env.PARSER_SERVER,
-                    JSON.parse(
-                      `{"contents":${JSON.stringify(resp.body).replace('"', '"')},"broken_links":${JSON.stringify(broken_link)},"title":"${document}","namespace":"${namespace}"}`
-                    )
-                  );
-                res.json({message:"suc", body:response.data, log:resp.log, modifiedtime:resp.modifiedtime,author:resp.author})
+                try {
+                    const broken_link = await getbroken(resp.body)
+                    const response = await axios.post(
+                        process.env.PARSER_SERVER,
+                        JSON.parse(
+                          `{"contents":${JSON.stringify(resp.body).replace('"', '"')},"broken_links":${JSON.stringify(broken_link)},"title":"${document}","namespace":"${namespace}"}`
+                        )
+                      );
+                    res.json({message:"suc", body:response.data, log:resp.log, modifiedtime:resp.modifiedtime,author:resp.author})
+                } catch (err) {
+                   res.json({message:"suc", body:JSON.stringify(err), log:resp.log, modifiedtime:resp.modifiedtime,author:resp.author}) 
+                }
+                
             } else {
                 res.json({message:"no perms"})
             }

@@ -74,7 +74,7 @@ app.post(`/:namespace/:docname`, async (req, res) => {
   if (resp2.length != 0) {
         if (body.method == "acl") {
           if ((await candowiththisdoc(title, namespace, req)).acl == true) {
-            sql.doc.update({
+            await sql.doc.updateMany({
               where:{
                 namespace:namespace,
                 title:title,

@@ -22,22 +22,22 @@ app.get(`/:namespace/:docname/`, async (req, res) => {
   if (req.session.info == undefined) {
     if ((await candowiththisdoc(docname, namespace, req)).watch == true) {
       res.json({
-        title: for_acl.rows[0].title,
-        body: documentinfo.rows[0].body,
-        acl:JSON.stringify(documentinfo.rows[0].acl),
+        title: for_acl.title,
+        body: documentinfo.body,
+        acl:JSON.stringify(documentinfo.acl),
       });
     } else {
-      res.json({body:"No perms", acl:JSON.stringify(for_acl.rows[0].acl)})
+      res.json({body:"No perms", acl:JSON.stringify(for_acl.acl)})
     }
   } else {
     if ((await candowiththisdoc(docname, namespace, req)).watch == true) {
       res.json({
-        title: documentinfo.rows[0].title,
-        body: documentinfo.rows[0].body,
-        acl:JSON.stringify(documentinfo.rows[0].acl),
+        title: documentinfo.title,
+        body: documentinfo.body,
+        acl:JSON.stringify(documentinfo.acl),
       });
     } else {
-      res.json({body:"No perms", acl:JSON.stringify(for_acl.rows[0].acl)})
+      res.json({body:"No perms", acl:JSON.stringify(for_acl.acl)})
     }
   }
 });
