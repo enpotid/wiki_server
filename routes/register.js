@@ -9,16 +9,20 @@ app.post(`/`, async (req, res) => {
   let password = SHA256(body.password + process.env.SECRET).toString(
     CryptoJS.enc.Hex
   );
-  const resp = await sql.query(`SELECT * FROM users WHERE name=$1`, [
-    body.name,
-  ]);
-  if (resp.rowCount != 0) {
+  const resp = await sql.users.findFirst({
+    where:{
+      name:body.name
+    }
+  })
+  if (resp != null) {
     res.send("name already used");
   } else {
-    sql.query(`INSERT INTO users (name, password) VALUES ($1, $2)`, [
-      body.name,
-      password,
-    ]);
+    await sql.users.create({
+      data:{
+        name:body.name,
+        password:password
+      }
+    })
     res.send("suc");
   }
 });

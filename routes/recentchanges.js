@@ -18,7 +18,6 @@ app.get("/:count", async (req, res) => {
         })
         res.json({message:"suc", recentchanges:resp})
     } catch (err) {
-        throw (err)
         res.status(400).json({message:err})
     }
     

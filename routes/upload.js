@@ -15,31 +15,51 @@ const storage = multer.diskStorage({
     }
   });
   const upload = multer({storage:storage})
-app.post('/', upload.single('file'), auth, (req, res) => {
+app.post('/', upload.single('file'), auth, async (req, res) => {
   let parsed = JSON.parse(req.body.json)
-    sql.query(`INSERT INTO doc (title, namespace) VALUES ($1, $2)`, [parsed.title, "file"]);
+    await sql.doc.create({
+      data:{
+        title:parsed.title,
+        namespace:"file"
+      }
+    })
     let author = (req.session.info != undefined) ? (req.session.info.name) : (req.body.author)
-    sql.query(`INSERT INTO history (namespace, title, body, log, author) VALUES ($1, $2, $3, $4, $5)`, [
-      "file",
-      parsed.title,
-      parsed.body,
-      parsed.log,
-      author //프론트랑 API Key로 연동할꺼라서 변조 걱정 ㄴㄴ
-    ]);
+    await sql.history.create({
+      data:{
+        namespace:"file",
+        title:parsed.title,
+        body:parsed.body,
+        log:parsed.log,
+        author:author
+      }
+    })
 })
 async function auth (req, res, next) {
-  const resp1 = await sql.query(`SELECT * FROM namespace WHERE name=$1`, [req.body.json.title])
+  const resp1 = await sql.doc.findFirst({
+    where:{
+      namespace:"file",
+      title:req.body.json.title
+    }
+  })
   let acl = undefined
-  if (resp1.rowCount != 0) {
-    if (resp1.rows[0].acl == {}) {
-      const resp = await sql.query(`SELECT * FROM namespace WHERE name=$1`, ["file"])
-      acl = resp.rows[0].acl;
+  if (resp1 != null) {
+    if (resp1.acl == {}) {
+      const resp = await sql.namespace.findFirst({
+        where:{
+          name:"file"
+        }
+      })
+      acl = resp.acl;
     } else {
-      acl = resp1.rows[0].acl;
+      acl = resp1.acl;
     }
   } else {
-    const resp = await sql.query(`SELECT * FROM namespace WHERE name=$1`, ["file"])
-    acl = resp.rows[0].defaultacl
+    const resp = await sql.namespace.findFirst({
+      where:{
+        name:"file"
+      }
+    })
+    acl = resp.defaultacl
   }
   const cando = cando_old(acl, req);
     if (cando.edit == true) {

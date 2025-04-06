@@ -9,14 +9,16 @@ app.post(`/`, async (req, res) => {
   let password = SHA256(req.body.password + process.env.SECRET).toString(
     CryptoJS.enc.Hex
   );
-  const resp = await sql.query(
-    `SELECT * FROM users WHERE name=$1 AND password=$2`,
-    [req.body.name, password]
-  );
-  if (resp.rowCount != 1) {
+  const resp = await sql.users.findFirst({
+    where:{
+      name:req.body.name,
+      password:password
+    }
+  })
+  if (resp != null) {
     res.send("wrong");
   } else {
-    req.session.info = resp.rows[0];
+    req.session.info = resp;
     req.session.save((err) => {if (err) {throw err;}})
     res.send("suc");
   }

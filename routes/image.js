@@ -7,8 +7,13 @@ const path = require("path")
 const fs = require("fs")
 app.use(express.json());
 app.get(`/:imagename`, async (req, res) => {
-  const exist = await sql.query(`SELECT * FROM doc WHERE namespace=$1 AND title=$2`, ["file", req.params.imagename])
-  if (exist.rowCount == 0) {
+  const exist = await sql.doc.findFirst({
+    where:{
+      namespace:"file",
+      title:req.params.imagename
+    }
+  })
+  if (exist==null) {
     res.status(404).send("not found🤔")
   } else {
     if ((await candowiththisdoc(req.params.imagename, "file", req)).watch == true) {

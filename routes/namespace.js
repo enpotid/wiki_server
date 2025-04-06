@@ -1,6 +1,7 @@
 const express = require("express");
 const { sql } = require("../ConnectDB");
 const { candowiththisns } = require("../usermanager");
+const { Prisma, PrismaClient } = require("@prisma/client");
 const app = express.Router();
 app.use(express.json());
 app.post(`/:namespace`, async (req, res) => {
@@ -10,14 +11,30 @@ app.post(`/:namespace`, async (req, res) => {
     if (req.body.method == "acl") {
         if (req.session.info.permission.includes("owner") || req.session.info.permission.includes("nsacl") || req.session.info.permission.includes("nsmgr")) {
             try {
-                const before = await sql.query(`SELECT defaultacl FROM namespace WHERE name=$1`, [req.params.namespace])
-                
-                sql.query(`UPDATE namespace SET defaultacl=$1 WHERE name=$2`, [req.body.acl, req.params.namespace])
-                sql.query(`INSERT INTO log (who, type, time, log) VALUES ($1, $2, CURRENT_TIMESTAMP, $3)`, [
-                    req.session.info.name,
-                    "nsacl",
-                    {before:before.rows[0], after:req.body.acl, log:"test"}
-                ])
+                const before = await sql.namespace.findFirst({
+                    where:{
+                        name:req.params.namespace
+                    }
+                })
+                await sql.namespace.update({
+                    data:{
+                        defaultacl:req.body.acl
+                    },
+                    where:{
+                        name:req.params.namespace
+                    }
+                })
+                await sql.log.create({
+                    data:{
+                        who:req.session.info.name,
+                        type:"nsacl",
+                        log:{
+                            before:before.defaultacl,
+                            after:req.body.acl,
+                            log:"구현안함"
+                        }
+                    }
+                })
             } catch (err) {
                 console.log(err)
                 res.json({message:"not found"}) //다른 예외는 없겠지 뭐,
@@ -29,18 +46,28 @@ app.post(`/:namespace`, async (req, res) => {
     if (req.body.method == "create") {
         if (req.session.info.permission.includes("owner") || req.session.info.permission.includes("nsmgr")) {
             try {
-                const resp = await sql.query(`SELECT * namespace WHERE name=$1`, [req.params.namespace])
-                if (resp.rows[0] == 1) {
+                const resp = await sql.namespace.findFirst({
+                    where:{name:req.params.namespace}
+                })
+                if (resp != null) {
                     res.send("nop")
                 } else {
-                    sql.query(`INSERT INTO namespace (name) VALUES ($1)`, [req.params.namespace])
-                    sql.query(`INSERT INTO log (who, type, when, log) VALUES ($1, nsacl, CURRENT_TIMESTAMP, $2)`, [
-                        req.session.name,
-                        {before:before, after:req.body.acl, log:""}
-                    ])
+                    sql.namespace.create({
+                        data:{name:req.params.namespace}
+                    })
+                    sql.log.create({
+                        data:{
+                            who:req.session.name,
+                            type:"mkns",
+                            log:{
+                                before:before,
+                                after:req.body.acl,
+                                log:"not made"
+                            }
+                        }
+                    })
                     res.send("suc")
                 }
-                
             } catch (err) {
                 res.json({message:"not found"}) //다른 예외는 없겠지 뭐,
             }
@@ -51,8 +78,12 @@ app.post(`/:namespace`, async (req, res) => {
 })
 app.get(`/:nsname`, async (req, res) => {
     try {
-        const resp = await sql.query(`SELECT * FROM namespace WHERE name=$1`, [req.params.nsname])    
-        res.json({acl:resp.rows[0].defaultacl, candowiththisns:await candowiththisns(req.params.nsname, req)})
+        const resp = await sql.namespace.findFirst({
+            where:{
+                name:req.params.nsname
+            }
+        })
+        res.json({acl:resp.defaultacl, candowiththisns:await candowiththisns(req.params.nsname, req)})
     } catch(e) {
         res.status(500).send("oops")
     }
@@ -60,8 +91,8 @@ app.get(`/:nsname`, async (req, res) => {
 })
 app.get(`/`, async (req, res) => {
     try {
-        const resp = await sql.query(`SELECT * FROM namespace`)    
-        res.json(resp.rows)
+        const resp = await sql.namespace.findMany();    
+        res.json(resp)
     } catch(e) {
         res.status(500).send("oops")
     }

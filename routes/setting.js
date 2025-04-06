@@ -8,7 +8,14 @@ app.post(`/`, async (req, res) => {
         res.send("not login")
     } else {
         let name = req.session.info.name;
-        await sql.query(`UPDATE users SET setting=$1 WHERE name=$2`, [body, name])
+        await sql.users.update({
+            where:{
+                name:name
+            },
+            data:{
+                setting:body
+            }
+        })
         req.session.info.setting = body
         res.send("changed")
     }

@@ -16,8 +16,8 @@ app.get("/:nums", (req, res) => {
 })
 async function process(req, res, nums) {
     let doc = [];
-    const docs = await sql.query(`SELECT * FROM doc ORDER BY RANDOM() LIMIT $1`, [nums])
-    docs.rows.map((docinfo) => {
+    const docs = await sql.$queryRaw`SELECT * FROM doc ORDER BY RANDOM() LIMIT ${Number(nums)}`
+    docs.map((docinfo) => {
         doc.push({namespace:docinfo.namespace,title:docinfo.title})
     })
     res.json(doc)
