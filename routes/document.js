@@ -25,7 +25,8 @@ app.get(`/:namespace/:docname`, async (req, res) => {
     }
   })
   if (documentinfo.length == 0) {return res.status(404).json({content:"Document not found", candowiththisdoc:
-    await candowiththisns(namespace, req)
+    await candowiththisns(namespace, req),
+    acl:{}
   });}
   const document = await sql.history.findMany({
     where:{
@@ -50,7 +51,7 @@ app.get(`/:namespace/:docname`, async (req, res) => {
       res.json({content:err+"Parser server not working Σ(っ °Д °<span style='color:red;'>;</span>)っ connect to server administrator", acl:documentinfo.rows[0].acl,candowiththisdoc:cando})
     }    
   } else {
-    res.json({content:"No perms",acl:documentinfo[0].acl,candowiththisdoc:cando})
+    res.json({content:"No perms",acl:documentinfo.acl,candowiththisdoc:cando})
   }
 });
 const index = meili.index(process.env.WIKINAME)
@@ -73,18 +74,32 @@ app.post(`/:namespace/:docname`, async (req, res) => {
   if (resp2.length != 0) {
         if (body.method == "acl") {
           if ((await candowiththisdoc(title, namespace, req)).acl == true) {
-            sql.query(`UPDATE doc SET acl=$3 WHERE namespace=$1 AND title=$2`, [
-              namespace,
-              title,
-              body.acl
-            ])
             sql.doc.update({
               where:{
                 namespace:namespace,
                 title:title,
               },
               data:{
-                acl:body.acl
+                acl:body.acl,
+                lastrev:resp2[0].lastrev+1
+              }
+            })
+            await sql.history.create({
+              data:{
+                rev:resp2[0].lastrev+1,
+                title:title,
+                namespace:namespace,
+                log:req.body.log,
+                hidden:false,
+                body:(await sql.history.findFirst({
+                  where:{
+                    namespace:namespace,
+                    title:title,
+                    rev:resp2[0].lastrev
+                  }
+                })).body,
+                uuid:uuidv1(),
+                author:author
               }
             })
           } else {
@@ -117,6 +132,26 @@ app.post(`/:namespace/:docname`, async (req, res) => {
             res.send("No Perms");
           }
         }
+      } else if (body.method == "acl") {
+        await sql.history.create({
+          data:{
+            namespace:namespace,
+            title:title,
+            rev:0,
+            body:"",
+            log:body.log,
+            author:author,
+            uuid:uuidv1(),
+            hidden:false
+          }
+        })
+        await sql.doc.create({
+          data:{
+            title:title,
+            namespace:namespace,
+            uuid:uuidv1()
+          }
+        })
       } else {
         // 동일한 title이 없다면 문서 추가
         await sql.history.create({
@@ -126,7 +161,8 @@ app.post(`/:namespace/:docname`, async (req, res) => {
             body:body.body,
             log:body.log,
             author:author,
-            uuid:uuidv1()
+            uuid:uuidv1(),
+            hidden:false
           }
         })
         await sql.doc.create({

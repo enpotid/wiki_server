@@ -24,8 +24,17 @@ app.get(`/:namespace/:document/list/:nums/:pages`, (req, res) => {
         let namespace = req.params.namespace;
         let document = req.params.document;
         let gethidden = false;
+        let where = {
+            namespace:namespace,
+            title:document,
+        }
         if (req.session.info != undefined) {
             gethidden = (req.session.info.permission.includes("hide_rev") || req.session.info.permission.includes("owner")) ? (true) : (false)
+        }
+        if (gethidden == true) {
+            where.OR = [{hidden:true}, {hidden:false}]
+        } else {
+            where.hidden = false
         }
         const resp = await sql.history.findMany({
             select:{
@@ -35,11 +44,7 @@ app.get(`/:namespace/:document/list/:nums/:pages`, (req, res) => {
                 modifiedtime:true,
                 author:true
             },
-            where:{
-                hidden:gethidden,
-                namespace:namespace,
-                title:document
-            },
+            where:where,
             orderBy:{
                 rev:"desc"
             }
@@ -106,8 +111,8 @@ app.get(`/:namespace/:document/:rev/togglehide`, async (req, res) => {
     const resp = await sql.history.findFirst({
         where:{
             namespace:namespace,
-            title:title,
-            rev:rev
+            title:document,
+            rev:Number(rev)
         }
     })
     if (resp == null) {
@@ -115,14 +120,14 @@ app.get(`/:namespace/:document/:rev/togglehide`, async (req, res) => {
     } else {
         if (req.session.info != undefined) {
             if (req.session.info.permission.includes("owner") || req.session.info.permission.includes("hide_rev") ) {
-                await sql.history.update({
+                await sql.history.updateMany({
                     data:{
                         hidden:!resp.hidden,
                     },
                     where:{
-                        title:title,
+                        title:document,
                         namespace:namespace,
-                        rev:rev
+                        rev:Number(rev)
                     }
                 })
                 res.json({message:"suc"})

@@ -26,7 +26,7 @@ model history {
   hidden       Boolean
   body         String?
   log          String?
-  modifiedtime DateTime @db.Timestamptz(6)
+  modifiedtime DateTime @default(now()) @db.Timestamptz(6)
   author       String
   uuid         String   @id @db.Uuid
 }

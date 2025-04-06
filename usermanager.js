@@ -1,22 +1,35 @@
 const { sql } = require("./ConnectDB");
 const {parseACL} = require("./aclparser")
 async function candowiththisdoc (docname, ns, req) {
-    const resp = await sql.query(`SELECT acl from doc WHERE title=$1 AND namespace=$2`, 
-        [docname, ns]
-    )
+    const resp = await sql.doc.findFirst({
+        where:{
+            title:docname,
+            namespace:ns
+        }
+    })
     let doc_acl;
-    if (resp.rowCount == 0) {
-        const resp = await sql.query(`SELECT defaultacl from namespace WHERE name=$1`, 
-            [ns]
-        )
-        doc_acl = resp.rows[0].defaultacl
-    } else if (Object.keys(resp.rows[0].acl).length == 0) {
-        const resp = await sql.query(`SELECT defaultacl from namespace WHERE name=$1`, 
-            [ns]
-        )
-        doc_acl = resp.rows[0].defaultacl
+    if (resp == null) {
+        const resp = await sql.namespace.findFirst({
+            where:{
+                name:ns
+            },
+            select:{
+                defaultacl:true
+            }
+        })
+        doc_acl = resp.defaultacl
+    } else if (Object.keys(resp.acl).length == 0) {
+        const resp = await sql.namespace.findFirst({
+            where:{
+                name:ns
+            },
+            select:{
+                defaultacl:true
+            }
+        })
+        doc_acl = resp.defaultacl
     } else {
-        doc_acl = resp.rows[0].acl
+        doc_acl = resp.acl
         
     }
     return cando_old(doc_acl, req)

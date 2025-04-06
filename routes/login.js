@@ -15,7 +15,7 @@ app.post(`/`, async (req, res) => {
       password:password
     }
   })
-  if (resp != null) {
+  if (resp == null) {
     res.send("wrong");
   } else {
     req.session.info = resp;

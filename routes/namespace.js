@@ -31,7 +31,7 @@ app.post(`/:namespace`, async (req, res) => {
                         log:{
                             before:before.defaultacl,
                             after:req.body.acl,
-                            log:"구현안함"
+                            log:req.body.log
                         }
                     }
                 })
