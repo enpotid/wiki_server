@@ -10,8 +10,13 @@ async function getbroken (body) {
         let parsed = ee.split(":")
         let ns = (parsed[1] == undefined ? ("document") : (parsed[0]))
         let title = (parsed[1] == undefined ? (parsed[0]) : (parsed.slice(1).join(":")))
-        const resp = await sql.query(`SELECT * FROM doc WHERE namespace=$1 AND title=$2`, [ns, title])
-        if (resp.rowCount == 1) {
+        const resp = await sql.doc.findFirst({
+          where:{
+            namespace:ns,
+            title:title
+          }
+        })
+        if (resp != null) {
           result.push(true)
         } else {
           result.push(false)

@@ -21,7 +21,8 @@ app.post('/', upload.single('file'), auth, async (req, res) => {
     await sql.doc.create({
       data:{
         title:parsed.title,
-        namespace:"file"
+        namespace:"file",
+        uuid:randomUUID()
       }
     })
     let author = (req.session.info != undefined) ? (req.session.info.name) : (req.body.author)
@@ -51,7 +52,7 @@ async function auth (req, res, next) {
           name:"file"
         }
       })
-      acl = resp.acl;
+      acl = resp.defaultacl;
     } else {
       acl = resp1.acl;
     }

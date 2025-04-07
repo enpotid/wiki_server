@@ -107,6 +107,9 @@ app.post(`/:namespace/:docname`, async (req, res) => {
           }
         } else if (body.method == "edit") {
           if ((await candowiththisdoc(title, namespace, req)).edit == true) {
+            cleanbacklink(resp2[0].links, namespace, title)
+            let links = await parsebacklink(body.body);
+            mkbacklink(links, namespace, title)
             await sql.history.create({
               data:{
                 namespace:namespace,
@@ -115,10 +118,11 @@ app.post(`/:namespace/:docname`, async (req, res) => {
                 body:body.body,
                 log:body.log,
                 author:author,
-                uuid:uuidv1()
+                uuid:uuidv1(),
+                hidden:false
               }
             })
-            await sql.doc.update({
+            await sql.doc.updateMany({
               where:{
                 namespace:namespace,
                 title:title
@@ -153,6 +157,8 @@ app.post(`/:namespace/:docname`, async (req, res) => {
           }
         })
       } else {
+        let links = parsebacklink(body.body);
+        await mkbacklink(links, namespace, title);
         // 동일한 title이 없다면 문서 추가
         await sql.history.create({
           data:{
@@ -162,7 +168,8 @@ app.post(`/:namespace/:docname`, async (req, res) => {
             log:body.log,
             author:author,
             uuid:uuidv1(),
-            hidden:false
+            hidden:false,
+            links:links
           }
         })
         await sql.doc.create({
@@ -179,4 +186,74 @@ app.post(`/:namespace/:docname`, async (req, res) => {
         res.send(`문서 '${title}'가 성공적으로 추가되었습니다.`);
     }
 });
+async function parsebacklink (body) {
+  let regex = /\[\[(((?!\[\[|\]\]|\n).|\n)*)\]\]/g
+  let result = []
+  while (regex.test(body) == true) {
+    for (let e of body.match(regex)) {
+      let ew = e.split("|", 1)
+      let ee = ew[0].slice(2, e.length - 2)
+      let parsed = ee.split(":")
+      let ns = (parsed[1] == undefined ? ("document") : (parsed[0]))
+      let title = (parsed[1] == undefined ? (parsed[0]) : (parsed.slice(1).join(":")))
+      result.push({namespace:ns,title:title})
+      body = body.replace(e, "")
+    }
+  }
+  return result
+}
+async function mkbacklink (links, ns, title) {
+  for (let e of links) {
+    const resp = await sql.backlink.findFirst({
+      where:{
+        namespace:e.namespace,
+        title:e.title
+      }
+    })
+    if (resp == null) {
+      await sql.backlink.create({
+        data:{
+          namespace:e.namespace,
+          title:e.title,
+          links:[{namespace:ns, title:title}]
+        }
+      })
+    } else {
+      let links = JSON.parse(JSON.stringify(resp.links))
+      if (!links.includes({namespace:ns, title:title})) {
+        links.push({namespace:ns, title:title})
+        await sql.backlink.updateMany({
+          where:{
+            namespace:e.namespace,
+            title:e.title
+          },
+          data:{
+            links:links
+          }
+        })
+      }
+    }
+  }
+}
+async function cleanbacklink(links, ns, title) {
+  for (let e of links) {
+    const resp = await sql.backlink.findFirst({
+      where:{
+        namespace:e.namespace,
+        title:e.title
+      }
+    })
+    let arr = JSON.parse(JSON.stringify(resp.links))
+    arr = arr.filter(item => item != {namespace:ns,title:title});
+    await sql.backlink.updateMany({
+      where:{
+        namespace:e.namespace,
+        title:e.title
+      },
+      data:{
+        links:arr
+      }
+    })
+  }
+}
 module.exports = app;
