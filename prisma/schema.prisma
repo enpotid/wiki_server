@@ -13,7 +13,7 @@ model doc {
   lastrev   Int    @default(0)
   acl       Json   @default("{}") @db.Json
   uuid      String @id(map: "uuid") @db.Uuid
-  links       Json   @default("[]") @db.Json
+  links       String
 }
 
 model groups {
@@ -72,5 +72,5 @@ model backlink {
   uuid        String    @id @db.Uuid
   namespace   String
   title       String
-  links     Json      @default("[]") @db.Json
+  links     String
 }

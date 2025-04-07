@@ -107,9 +107,9 @@ app.post(`/:namespace/:docname`, async (req, res) => {
           }
         } else if (body.method == "edit") {
           if ((await candowiththisdoc(title, namespace, req)).edit == true) {
-            cleanbacklink(resp2[0].links, namespace, title)
+            await cleanbacklink(JSON.parse(resp2[0].links), namespace, title)
             let links = await parsebacklink(body.body);
-            mkbacklink(links, namespace, title)
+            await mkbacklink(links, namespace, title)
             await sql.history.create({
               data:{
                 namespace:namespace,
@@ -125,7 +125,8 @@ app.post(`/:namespace/:docname`, async (req, res) => {
             await sql.doc.updateMany({
               where:{
                 namespace:namespace,
-                title:title
+                title:title,
+                links:JSON.stringify(links)
               },
               data:{
                 lastrev:resp2[0].lastrev+1
@@ -157,7 +158,8 @@ app.post(`/:namespace/:docname`, async (req, res) => {
           }
         })
       } else {
-        let links = parsebacklink(body.body);
+        let links = await parsebacklink(body.body);
+        console.log(links)
         await mkbacklink(links, namespace, title);
         // 동일한 title이 없다면 문서 추가
         await sql.history.create({
@@ -169,12 +171,12 @@ app.post(`/:namespace/:docname`, async (req, res) => {
             author:author,
             uuid:uuidv1(),
             hidden:false,
-            links:links
           }
         })
         await sql.doc.create({
           data:{
             title:title,
+            links:JSON.stringify(links),
             namespace:namespace,
             uuid:uuidv1()
           }
@@ -215,11 +217,12 @@ async function mkbacklink (links, ns, title) {
         data:{
           namespace:e.namespace,
           title:e.title,
-          links:[{namespace:ns, title:title}]
+          links:JSON.stringify([{namespace:ns, title:title}]),
+          uuid:uuidv1()
         }
       })
     } else {
-      let links = JSON.parse(JSON.stringify(resp.links))
+      let links = JSON.parse(resp.links)
       if (!links.includes({namespace:ns, title:title})) {
         links.push({namespace:ns, title:title})
         await sql.backlink.updateMany({
@@ -228,7 +231,7 @@ async function mkbacklink (links, ns, title) {
             title:e.title
           },
           data:{
-            links:links
+            links:JSON.stringify(links)
           }
         })
       }
@@ -243,15 +246,18 @@ async function cleanbacklink(links, ns, title) {
         title:e.title
       }
     })
-    let arr = JSON.parse(JSON.stringify(resp.links))
-    arr = arr.filter(item => item != {namespace:ns,title:title});
+    console.log(e)
+    let arr = JSON.parse(resp.links)
+    console.log(arr)
+    arr = arr.filter(item => item == {namespace:ns,title:title});
+    console.log(arr)
     await sql.backlink.updateMany({
       where:{
         namespace:e.namespace,
         title:e.title
       },
       data:{
-        links:arr
+        links:JSON.stringify(arr)
       }
     })
   }

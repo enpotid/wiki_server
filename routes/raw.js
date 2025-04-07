@@ -16,7 +16,7 @@ app.get(`/:namespace/:docname/`, async (req, res) => {
     where:{
       title:docname,
       namespace:namespace,
-      
+      rev:for_acl.lastrev
     }
   })
   if (req.session.info == undefined) {
