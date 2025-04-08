@@ -87,7 +87,6 @@ app.get(`/:nsname`, async (req, res) => {
     } catch(e) {
         res.status(500).send("oops")
     }
-    
 })
 app.get(`/`, async (req, res) => {
     try {
@@ -97,5 +96,11 @@ app.get(`/`, async (req, res) => {
         res.status(500).send("oops")
     }
     
+})
+//not made :D
+app.delete(`/:nsname`, async (req, res) => {
+    if (req.session.info != undefined) {
+
+    }
 })
 module.exports = app;

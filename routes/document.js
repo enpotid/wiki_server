@@ -126,9 +126,9 @@ app.post(`/:namespace/:docname`, async (req, res) => {
               where:{
                 namespace:namespace,
                 title:title,
-                links:JSON.stringify(links)
               },
               data:{
+                links:JSON.stringify(links),
                 lastrev:resp2[0].lastrev+1
               }
             })
@@ -159,7 +159,6 @@ app.post(`/:namespace/:docname`, async (req, res) => {
         })
       } else {
         let links = await parsebacklink(body.body);
-        console.log(links)
         await mkbacklink(links, namespace, title);
         // 동일한 title이 없다면 문서 추가
         await sql.history.create({
@@ -246,11 +245,8 @@ async function cleanbacklink(links, ns, title) {
         title:e.title
       }
     })
-    console.log(e)
     let arr = JSON.parse(resp.links)
-    console.log(arr)
     arr = arr.filter(item => item == {namespace:ns,title:title});
-    console.log(arr)
     await sql.backlink.updateMany({
       where:{
         namespace:e.namespace,

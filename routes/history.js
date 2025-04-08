@@ -73,14 +73,7 @@ app.get(`/:namespace/:document/:rev`, async (req, res) => {
         if (resp.hidden) {
             if (req.session.info != undefined) {
                 if (req.session.info.permission.includes("owner") || req.session.info.permission.includes("hide_rev") ) {
-                    const broken_link = await getbroken(resp.body)
-                    const response = await axios.post(
-                    process.env.PARSER_SERVER,
-                    JSON.parse(
-                      `{"contents":${JSON.stringify(resp.body).replace('"', '"')},"broken_links":${JSON.stringify(broken_link)},"title":"${document}","namespace":"${namespace}"}`
-                    )
-                  );
-                res.json({message:"suc", body:response.data, log:resp.log, modifiedtime:resp.modifiedtime,author:resp.author})
+                    res.json({message:"make log"})
                 } else {
                     res.json({message:"hidden"})
                 }
@@ -102,11 +95,52 @@ app.get(`/:namespace/:document/:rev`, async (req, res) => {
                 } catch (err) {
                    res.json({message:"suc", body:JSON.stringify(err), log:resp.log, modifiedtime:resp.modifiedtime,author:resp.author}) 
                 }
-                
             } else {
                 res.json({message:"no perms"})
             }
         }
+    }
+})
+app.post(`/:namespace/:document/:rev`, async (req, res) => {
+    let namespace = req.params.namespace;
+    let title = req.params.document;
+    let rev = req.params.rev;
+    if ((await candowiththisdoc(title, namespace, req)).watch) {
+        if (req.session.info == undefined) {
+            res.send("nop")
+        } else if (
+            req.session.info.permission.includes("owner"),
+            req.session.info.permission.includes("hide_rev")
+        ) {
+            await sql.log.create({
+                data:{
+                    who:req.session.info.name,
+                    type:"watch_hidden_rev" //그런데 togglehide기능으로 보면 되는거 아닌가.
+                    //음 그러면 설정으로 끄 킴 가능하게 하고, 이 기능이 켜져있으면 togglehide에도 로그 남기게?
+                    ,log:{namespace:namespace,title:title,rev:rev,log:req.body.log}
+                }
+            })
+            const resp = await sql.history.findFirst({
+                where:{
+                    title:title,
+                    namespace:namespace,
+                    rev:rev
+                }
+            })
+            const broken_link = await getbroken(resp.body)
+                    const response = await axios.post(
+                    process.env.PARSER_SERVER,
+                    JSON.parse(
+                      `{"contents":${JSON.stringify(resp.body).replace('"', '"')},"broken_links":${JSON.stringify(broken_link)},"title":"${document}","namespace":"${namespace}"}`
+                    )
+                  );
+                res.json({message:"suc", body:response.data, log:resp.log, modifiedtime:resp.modifiedtime,author:resp.author})
+            res.send()
+        } else {
+            res.send("nop")
+        }
+    } else {
+        res.send("nop")
     }
 })
 app.get(`/:namespace/:document/:rev/togglehide`, async (req, res) => {
