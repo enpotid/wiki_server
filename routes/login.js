@@ -20,6 +20,16 @@ app.post(`/`, async (req, res) => {
   } else {
     req.session.info = resp;
     req.session.save((err) => {if (err) {throw err;}})
+    await sql.log.create({
+      data:{
+        who:resp.name,
+        type:"login_history",
+        log:{
+          ua:"Test User Agent",
+          ip:req.body.ip
+        }
+      }
+    })
     res.send("suc");
   }
 });

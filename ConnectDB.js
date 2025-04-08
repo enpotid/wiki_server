@@ -2,7 +2,7 @@ const { PrismaClient } = require("@prisma/client");
 
 const sql = new PrismaClient();
 function ConnectDB () {
-    let dafaultns = ["file", "user", process.env.WIKINAME, "category"] 
+    let dafaultns = ["file", "user", process.env.WIKINAME, "category", "document"] 
     dafaultns.map(async (e) => {
         const ns = await sql.namespace.findUnique({
             where:{

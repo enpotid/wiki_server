@@ -83,6 +83,7 @@ app.get(`/:nsname`, async (req, res) => {
                 name:req.params.nsname
             }
         })
+        console.log(resp)
         res.json({acl:resp.defaultacl, candowiththisns:await candowiththisns(req.params.nsname, req)})
     } catch(e) {
         res.status(500).send("oops")

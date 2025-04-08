@@ -31,6 +31,7 @@ const thread = require("./routes/thread")
 const uploadrouter = require("./routes/upload")
 const namespace = require("./routes/namespace");
 const image = require("./routes/image");
+const log = require("./routes/log");
 const { spawn } = require("child_process");
 const http = require("http");
 const { error } = require("console");
@@ -80,6 +81,7 @@ app.use("/thread/", thread)
 app.use("/upload/", uploadrouter)
 app.use("/namespace/", namespace)
 app.use("/image/", image)
+app.use("/log/", log)
 serv.listen(process.env.PORT, function () {
   console.log(`Listening on http://localhost:${process.env.PORT}`);
 });
