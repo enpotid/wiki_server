@@ -29,6 +29,7 @@ app.post(`/:namespace`, async (req, res) => {
                         who:req.session.info.name,
                         type:"nsacl",
                         log:{
+                            namespace:req.params.namespace,
                             before:before.defaultacl,
                             after:req.body.acl,
                             log:req.body.log
