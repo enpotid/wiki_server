@@ -4,6 +4,7 @@ const { candowiththisdoc } = require("../usermanager");
 const { default: axios } = require("axios");
 const { getbroken } = require("../documentfns");
 const app = express.Router();
+app.use(express.json())
 app.get(`/:namespace/:document/list/:nums/:pages`, (req, res) => {
     let nums = req.params.nums
     let pages = req.params.pages;
@@ -109,7 +110,7 @@ app.post(`/:namespace/:document/:rev`, async (req, res) => {
         if (req.session.info == undefined) {
             res.send("nop")
         } else if (
-            req.session.info.permission.includes("owner"),
+            req.session.info.permission.includes("owner")||
             req.session.info.permission.includes("hide_rev")
         ) {
             await sql.log.create({
@@ -124,14 +125,14 @@ app.post(`/:namespace/:document/:rev`, async (req, res) => {
                 where:{
                     title:title,
                     namespace:namespace,
-                    rev:rev
+                    rev:Number(rev)
                 }
             })
             const broken_link = await getbroken(resp.body)
                     const response = await axios.post(
                     process.env.PARSER_SERVER,
                     JSON.parse(
-                      `{"contents":${JSON.stringify(resp.body).replace('"', '"')},"broken_links":${JSON.stringify(broken_link)},"title":"${document}","namespace":"${namespace}"}`
+                      `{"contents":${JSON.stringify(resp.body).replace('"', '"')},"broken_links":${JSON.stringify(broken_link)},"title":"${title}","namespace":"${namespace}"}`
                     )
                   );
                 res.json({message:"suc", body:response.data, log:resp.log, modifiedtime:resp.modifiedtime,author:resp.author})
