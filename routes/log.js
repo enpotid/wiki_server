@@ -8,6 +8,9 @@ app.get("/", async (req, res) => {
             type:{
                 not:"login_history"
             }
+        },
+        orderBy:{
+            time:"desc"
         }
     })
     res.send(resp)
