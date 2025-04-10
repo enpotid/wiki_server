@@ -46,7 +46,17 @@ app.get(`/:namespace/:docname`, async (req, res) => {
           `{"contents":${JSON.stringify(document[0].body).replace('"', '"')},"broken_links":${JSON.stringify(broken_link)},"title":"${docname}","namespace":"${namespace}"}`
         )
       );
-      res.json({content:response.data,candowiththisdoc:cando,acl:documentinfo[0].acl});
+      let content = {content:response.data,candowiththisdoc:cando,acl:documentinfo[0].acl}
+      if (namespace == "category") {
+        const resp = await sql.backlink.findFirst({
+          where:{
+            namespace:"category",
+            title:docname
+          }
+        })
+        content.backlinks = resp.links
+      }
+      res.json(content);
     } catch(err) {
       res.json({content:err+"Parser server not working Σ(っ °Д °<span style='color:red;'>;</span>)っ connect to server administrator", acl:documentinfo[0].acl,candowiththisdoc:cando})
     }    
@@ -246,7 +256,11 @@ async function cleanbacklink(links, ns, title) {
       }
     })
     let arr = JSON.parse(resp.links)
-    arr = arr.filter(item => item == {namespace:ns,title:title});
+    let arrr = []
+    arr = arr.filter(item => {
+      arrr.push(JSON.stringify(item))
+      return !arrr.includes(JSON.stringify(item))});
+    console.log(arr)
     await sql.backlink.updateMany({
       where:{
         namespace:e.namespace,

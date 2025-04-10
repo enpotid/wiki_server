@@ -274,7 +274,8 @@ fn parse_header(buffer:&mut String) {
     }
     context.push_str("</ul>\n");
     if !(buffer.contains("[nocontext]") ||
-       buffer.contains("[목차제거]"))
+       !buffer.contains("[목차제거]")) ||
+       !context.starts_with("<ul class=\"caki-context-box\"></ul>")
     {
         if buffer.contains("[목차]") || buffer.contains("[context]") {
             *buffer = buffer

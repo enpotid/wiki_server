@@ -4,7 +4,9 @@ const meili = new MeiliSearch({
   apiKey: process.env.MEILISEARCH_API_KEY         // Meilisearch API 키 (필요한 경우)
 })
 function initmeili() {
+  /*
   const index = meili.index(process.env.WIKINAME)
   meili.createIndex(process.env.WIKINAME)
+  */
 }
 module.exports = { meili, initmeili };
