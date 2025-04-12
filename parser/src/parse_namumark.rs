@@ -1,7 +1,6 @@
 use std::time::Instant;
 
 use fancy_regex::{Captures, Regex};
-use warp::filters::{body::form, method::head};
 pub fn parse (contents:&str, links:Vec<bool>, namespace:&str, title:&str, debug:bool) -> std::string::String {
     let mut rendered =String::from(contents);
     parse_first(&mut rendered, links, namespace, title, debug);
@@ -11,6 +10,7 @@ pub fn parse (contents:&str, links:Vec<bool>, namespace:&str, title:&str, debug:
 pub fn parse_first(buffer:&mut String, links:Vec<bool>, ns:&str, title:&str, debug:bool) {
     let isdark = true;
     parse_comment(buffer);
+    parse_link(buffer, links, ns, title);
     let triple_time = Instant::now();
     parse_triple(buffer, isdark, ns, title);
     if debug == true {
@@ -19,7 +19,6 @@ pub fn parse_first(buffer:&mut String, links:Vec<bool>, ns:&str, title:&str, deb
     parse_header(buffer);
     parse_backslash(buffer);
     parse_table(buffer);
-    parse_link(buffer, links, ns, title);
     parse_reference(buffer);
     parse_list(buffer);
     parse_markup(buffer);
@@ -162,6 +161,7 @@ fn parse_table (buffer:&mut String) {
     }
 }
 fn parse_link (buffer:&mut String, links:Vec<bool>, ns:&str, title:&str) {
+    let mut categorys = String::from("<div class=\"caki-categorys-box\"><button class=\"caki-category-extend\" onclick=\"caki-extent-category()\">펼치기</button>");
     let re = Regex::new(r"\[\[(((?!\[\[|\]\]|\n).|\n)*)\]\]").unwrap();
     let mut i = 0;
     while links.len() > i {
@@ -174,6 +174,14 @@ fn parse_link (buffer:&mut String, links:Vec<bool>, ns:&str, title:&str) {
                 Some((b, a)) => {
                     if b.starts_with("https://") || b.starts_with("http://") {
                         *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("<a style=\"color:green\" href=\"{}\"><span>(外)</span>{}</a>", b, a), 1)
+                    } else if b.starts_with("category:") {
+                        if links[i] == false {
+                            categorys.push_str(&format!("<a style=\"color:red\" href=\"/w/{b}\">{a}</a>"));
+                        } else {
+                            categorys.push_str(&format!("<a href=\"/w/{b}\">{a}</a>"));
+                        }
+                        *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), "", 1);
+                        
                     } else if links[i] == false {
                         *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("<a style=\"color:red;\" href=\"/w/{}\">{}</a>", b, a), 1)
                     } else if b.starts_with("file:") {
@@ -196,12 +204,19 @@ fn parse_link (buffer:&mut String, links:Vec<bool>, ns:&str, title:&str) {
                 None => {
                     if a.starts_with("https://") || a.starts_with("http://") {
                         *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("<a style=\"color:green\" href=\"{}\"><span>(外)</span>{}</a>", a, a), 1)
+                    } else if a.starts_with("category:") {
+                        if links[i] == false {
+                            categorys.push_str(&format!("<a style=\"color:red\" href=\"/w/{}\">{}</a>",a, &a[9..]));
+                        } else {
+                            categorys.push_str(&format!("<a href=\"/w/{}\">{}</a>",a, &a[9..]));
+                        }
+                        *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), "", 1);
                     } else if links[i] == false {
                         *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("<a style=\"color:red\" href=\"/w/{}\">{}</a>", a, a), 1)
                     } else if a.starts_with("file:") {
                         let parsed = a.split_once(":");
                         match parsed {
-                            Some((b, a)) => {
+                            Some((_, a)) => {
                                 *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("<img src=\"/api/image/{}\" style=\"vertical-align: bottom;\">", a), 1)
                             },
                             None => {
@@ -213,11 +228,17 @@ fn parse_link (buffer:&mut String, links:Vec<bool>, ns:&str, title:&str) {
                     } else {
                         *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("<a href=\"/w/{}\">{}</a>", a, a), 1)
                     }
-                    
+                    println!("{}", a.starts_with("category:"))
                 }
             }
             i += 1;
         }
+    }
+    categorys.push_str("</div>");
+    if categorys != "<div class=\"caki-categorys-box\"><button class=\"caki-category-extend\" onclick=\"caki-extent-category()\">펼치기</button></div>" {
+        categorys.push_str(&buffer[1..]);
+        categorys.insert_str(0, "\n");
+        *buffer = categorys;
     }
 }
 fn parse_header(buffer:&mut String) {

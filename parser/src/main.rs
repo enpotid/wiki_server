@@ -5,7 +5,7 @@ use dotenv::dotenv;
 //IP3=127
 //IP4=127
 //PORT=24879
-use std::{env, iter::Inspect, time::Instant};
+use std::{env, time::Instant};
 mod parse_namumark;
 use serde::{Deserialize, Serialize};
 use warp::Filter;
