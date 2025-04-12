@@ -161,7 +161,7 @@ fn parse_table (buffer:&mut String) {
     }
 }
 fn parse_link (buffer:&mut String, links:Vec<bool>, ns:&str, title:&str) {
-    let mut categorys = String::from("<div class=\"caki-categorys-box\"><button class=\"caki-category-extend\" onclick=\"caki-extent-category()\">펼치기</button>");
+    let mut categorys = String::from("<div id=\"CakiCategorysBox\" class=\"caki-categorys-box\"><button class=\"caki-category-extend\" id=\"caki-category-btn\" onclick=\"CakiExtendCategory()\">(+)</button>");
     let re = Regex::new(r"\[\[(((?!\[\[|\]\]|\n).|\n)*)\]\]").unwrap();
     let mut i = 0;
     while links.len() > i {
@@ -176,9 +176,9 @@ fn parse_link (buffer:&mut String, links:Vec<bool>, ns:&str, title:&str) {
                         *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("<a style=\"color:green\" href=\"{}\"><span>(外)</span>{}</a>", b, a), 1)
                     } else if b.starts_with("category:") {
                         if links[i] == false {
-                            categorys.push_str(&format!("<a style=\"color:red\" href=\"/w/{b}\">{a}</a>"));
+                            categorys.push_str(&format!("<a class=\"catlink\" style=\"color:red\" href=\"/w/{b}\">{a}</a>"));
                         } else {
-                            categorys.push_str(&format!("<a href=\"/w/{b}\">{a}</a>"));
+                            categorys.push_str(&format!("<a class=\"catlink\" href=\"/w/{b}\">{a}</a>"));
                         }
                         *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), "", 1);
                         
@@ -206,9 +206,9 @@ fn parse_link (buffer:&mut String, links:Vec<bool>, ns:&str, title:&str) {
                         *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("<a style=\"color:green\" href=\"{}\"><span>(外)</span>{}</a>", a, a), 1)
                     } else if a.starts_with("category:") {
                         if links[i] == false {
-                            categorys.push_str(&format!("<a style=\"color:red\" href=\"/w/{}\">{}</a>",a, &a[9..]));
+                            categorys.push_str(&format!("<a class=\"catlink\" style=\"color:red\" href=\"/w/{}\">{}</a>",a, &a[9..]));
                         } else {
-                            categorys.push_str(&format!("<a href=\"/w/{}\">{}</a>",a, &a[9..]));
+                            categorys.push_str(&format!("<a class=\"catlink\" href=\"/w/{}\">{}</a>",a, &a[9..]));
                         }
                         *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), "", 1);
                     } else if links[i] == false {
@@ -228,14 +228,13 @@ fn parse_link (buffer:&mut String, links:Vec<bool>, ns:&str, title:&str) {
                     } else {
                         *buffer = buffer.replacen(cap.get(0).unwrap().as_str(), &format!("<a href=\"/w/{}\">{}</a>", a, a), 1)
                     }
-                    println!("{}", a.starts_with("category:"))
                 }
             }
             i += 1;
         }
     }
     categorys.push_str("</div>");
-    if categorys != "<div class=\"caki-categorys-box\"><button class=\"caki-category-extend\" onclick=\"caki-extent-category()\">펼치기</button></div>" {
+    if categorys != "<div id=\"CakiCategorysBox\" class=\"caki-categorys-box\"><button class=\"caki-category-extend\" id=\"caki-category-btn\" onclick=\"CakiExtendCategory()\">(+)</button></div>" {
         categorys.push_str(&buffer[1..]);
         categorys.insert_str(0, "\n");
         *buffer = categorys;
