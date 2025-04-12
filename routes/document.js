@@ -256,11 +256,7 @@ async function cleanbacklink(links, ns, title) {
       }
     })
     let arr = JSON.parse(resp.links)
-    let arrr = []
-    arr = arr.filter(item => {
-      arrr.push(JSON.stringify(item))
-      return !arrr.includes(JSON.stringify(item))});
-    console.log(arr)
+    arr = arr.filter(item => JSON.stringify(item) !== JSON.stringify({namespace:ns, title:title}));
     await sql.backlink.updateMany({
       where:{
         namespace:e.namespace,
