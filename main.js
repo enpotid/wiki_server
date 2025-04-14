@@ -82,6 +82,9 @@ app.use("/upload/", uploadrouter)
 app.use("/namespace/", namespace)
 app.use("/image/", image)
 app.use("/log/", log)
+app.get("/test/:namespace/*", (req, res) => {
+  res.send("hi<br />"+req.params["0"])
+})
 serv.listen(process.env.PORT, function () {
   console.log(`Listening on http://localhost:${process.env.PORT}`);
 });

@@ -4,12 +4,12 @@ const { candowiththisdoc } = require("../usermanager")
 const app = express.Router()
 const {v1:uuidv1} = require("uuid")
 app.use(express.json())
-app.post(`/new/:namespace/:document`, async (req, res) => {
+app.post(`/new/:namespace/*`, async (req, res) => {
     if (req.body.body == undefined) {
         res.status(400).send("bad request 😂")
     }
     let namespace = req.params.namespace;
-    let document = req.params.document;
+    let document = req.params["0"];
     let author = (req.session.info == undefined ? (req.body.author) : (req.session.info.name))
     let cando = await candowiththisdoc(document, namespace, req)
     const for_exist = await sql.doc.findFirst({
@@ -87,12 +87,12 @@ app.get(`/:chatid`, async (req, res) => {
     }
     
 })
-app.get(`/:namespace/:title`, async (req, res) => {
+app.get(`/:namespace/*`, async (req, res) => {
     let viewer = (req.session.info == undefined ? (req.body.author) : (req.session.info.name))
     const chats = await sql.talks.findMany({
         where:{
             namespace:req.params.namespace,
-            title:req.params.title
+            title:req.params["0"]
         }
     })
     if (chats.length == 0) {

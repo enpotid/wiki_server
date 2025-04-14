@@ -2,8 +2,8 @@ const express = require("express");
 const app = express.Router();
 const { sql } = require("../ConnectDB");
 const {candowiththisdoc} = require("../usermanager")
-app.get(`/:namespace/:docname/`, async (req, res) => {
-  let docname = req.params.docname;
+app.get(`/:namespace/*`, async (req, res) => {
+  let docname = req.params["0"];
   let namespace = req.params.namespace;
   const for_acl = await sql.doc.findFirst({
     where:{

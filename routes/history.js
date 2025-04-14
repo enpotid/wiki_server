@@ -23,7 +23,7 @@ app.get(`/:namespace/:document/list/:nums/:pages`, (req, res) => {
     }
     async function process(req, res, nums) {
         let namespace = req.params.namespace;
-        let document = req.params.document;
+        let document = req.params["0"];
         let gethidden = false;
         let where = {
             namespace:namespace,
@@ -57,9 +57,9 @@ app.get(`/:namespace/:document/list/:nums/:pages`, (req, res) => {
         }
     }
 })
-app.get(`/:namespace/:document/:rev`, async (req, res) => {
+app.get(`/:rev/:namespace/*`, async (req, res) => {
     let namespace = req.params.namespace;
-    let document = req.params.document;
+    let document = req.params["0"];
     let rev = req.params.rev
     const resp = await sql.history.findFirst({
         where:{
@@ -102,9 +102,9 @@ app.get(`/:namespace/:document/:rev`, async (req, res) => {
         }
     }
 })
-app.post(`/:namespace/:document/:rev`, async (req, res) => {
+app.post(`/:rev/:namespace/*`, async (req, res) => {
     let namespace = req.params.namespace;
-    let title = req.params.document;
+    let title = req.params["0"];
     let rev = req.params.rev;
     if ((await candowiththisdoc(title, namespace, req)).watch) {
         if (req.session.info == undefined) {
@@ -144,9 +144,9 @@ app.post(`/:namespace/:document/:rev`, async (req, res) => {
         res.send("nop")
     }
 })
-app.get(`/:namespace/:document/:rev/togglehide`, async (req, res) => {
+app.get(`togglehide/:rev/:namespace/*`, async (req, res) => {
     let namespace = req.params.namespace;
-    let document = req.params.document;
+    let document = req.params["0"];
     let rev = req.params.rev
     const resp = await sql.history.findFirst({
         where:{

@@ -10,14 +10,14 @@ const CryptoJS = require("crypto-js");
 const { getbroken } = require("../documentfns");
 const {v1:uuidv1} = require("uuid")
 app.use(express.json({ limit: '50mb' }));
-app.get(`/:namespace/:docname`, async (req, res) => {
+app.get(`/:namespace/*`, async (req, res) => {
   const ns = await sql.namespace.findMany({
     where:{
       name:req.params.namespace
     }
   })
   let namespace = (ns.length == 0 ? ("document") : (req.params.namespace));
-  let docname = (ns.length == 0 ? (req.params.namespace+":"+req.params.docname) : (req.params.docname));
+  let docname = (ns.length == 0 ? (req.params.namespace+":"+req.params["0"]) : (req.params["0"]));
   const documentinfo = await sql.doc.findMany({
     where:{
       title:docname,
@@ -65,7 +65,7 @@ app.get(`/:namespace/:docname`, async (req, res) => {
   }
 });
 const index = meili.index(process.env.WIKINAME)
-app.post(`/:namespace/:docname`, async (req, res) => {
+app.post(`/:namespace/*`, async (req, res) => {
   let body = req.body;
   const resp = await sql.namespace.findMany({
     where:{
@@ -73,7 +73,7 @@ app.post(`/:namespace/:docname`, async (req, res) => {
     }
   });
   let namespace = (resp.length == 0) ? ("document") : (req.params.namespace);
-  let title = (resp.length == 0) ? (req.params.namespace+":"+req.params.docname) : (req.params.docname);;
+  let title = (resp.length == 0) ? (req.params.namespace+":"+req.params["0"]) : (req.params["0"]);;
   const resp2 = await sql.doc.findMany({
     where:{
       title:title,
