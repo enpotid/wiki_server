@@ -5,7 +5,42 @@ const { default: axios } = require("axios");
 const { getbroken } = require("../documentfns");
 const app = express.Router();
 app.use(express.json())
-app.get(`/:namespace/:document/list/:nums/:pages`, (req, res) => {
+app.get(`/togglehide/:rev/:namespace/*`, async (req, res) => {
+    let namespace = req.params.namespace;
+    let document = req.params["0"];
+    let rev = req.params.rev
+    const resp = await sql.history.findFirst({
+        where:{
+            namespace:namespace,
+            title:document,
+            rev:Number(rev)
+        }
+    })
+    if (resp == null) {
+        res.status(404).json({message:"not found"})
+    } else {
+        if (req.session.info != undefined) {
+            if (req.session.info.permission.includes("owner") || req.session.info.permission.includes("hide_rev") ) {
+                await sql.history.updateMany({
+                    data:{
+                        hidden:!resp.hidden,
+                    },
+                    where:{
+                        title:document,
+                        namespace:namespace,
+                        rev:Number(rev)
+                    }
+                })
+                res.json({message:"suc"})
+            } else {
+                res.json({message:"no perm"})
+            }
+        } else {
+            res.json({message:"no perm"})
+        }
+    }
+})
+app.get(`/:namespace/list/:nums/:pages/*`, (req, res) => {
     let nums = req.params.nums
     let pages = req.params.pages;
     if (nums > 100) {
@@ -58,49 +93,54 @@ app.get(`/:namespace/:document/list/:nums/:pages`, (req, res) => {
     }
 })
 app.get(`/:rev/:namespace/*`, async (req, res) => {
-    let namespace = req.params.namespace;
-    let document = req.params["0"];
-    let rev = req.params.rev
-    const resp = await sql.history.findFirst({
-        where:{
-            namespace:namespace,
-            title:document,
-            rev:Number(rev)
-        }
-    })
-    if (resp == null) {
-        res.status(404).json({message:"not found"})
-    } else {
-        if (resp.hidden) {
-            if (req.session.info != undefined) {
-                if (req.session.info.permission.includes("owner") || req.session.info.permission.includes("hide_rev") ) {
-                    res.json({message:"make log"})
+    try {
+        let namespace = req.params.namespace;
+        let document = req.params["0"];
+        let rev = req.params.rev
+        const resp = await sql.history.findFirst({
+            where:{
+                namespace:namespace,
+                title:document,
+                rev:Number(rev)
+            }
+        })
+        if (resp == null) {
+            res.status(404).json({message:"not found"})
+        } else {
+            if (resp.hidden) {
+                if (req.session.info != undefined) {
+                    if (req.session.info.permission.includes("owner") || req.session.info.permission.includes("hide_rev") ) {
+                        res.json({message:"make log"})
+                    } else {
+                        res.json({message:"hidden"})
+                    }
                 } else {
                     res.json({message:"hidden"})
                 }
             } else {
-                res.json({message:"hidden"})
-            }
-        } else {
-            let candowiththisdic = await candowiththisdoc(document, namespace, req)
-            if (candowiththisdic.watch == true) {
-                try {
-                    const broken_link = await getbroken(resp.body)
-                    const response = await axios.post(
-                        process.env.PARSER_SERVER,
-                        JSON.parse(
-                          `{"contents":${JSON.stringify(resp.body).replace('"', '"')},"broken_links":${JSON.stringify(broken_link)},"title":"${document}","namespace":"${namespace}"}`
-                        )
-                      );
-                    res.json({message:"suc", body:response.data, log:resp.log, modifiedtime:resp.modifiedtime,author:resp.author})
-                } catch (err) {
-                   res.json({message:"suc", body:JSON.stringify(err), log:resp.log, modifiedtime:resp.modifiedtime,author:resp.author}) 
+                let candowiththisdic = await candowiththisdoc(document, namespace, req)
+                if (candowiththisdic.watch == true) {
+                    try {
+                        const broken_link = await getbroken(resp.body)
+                        const response = await axios.post(
+                            process.env.PARSER_SERVER,
+                            JSON.parse(
+                              `{"contents":${JSON.stringify(resp.body).replace('"', '"')},"broken_links":${JSON.stringify(broken_link)},"title":"${document}","namespace":"${namespace}"}`
+                            )
+                          );
+                        res.json({message:"suc", body:response.data, log:resp.log, modifiedtime:resp.modifiedtime,author:resp.author})
+                    } catch (err) {
+                       res.json({message:"suc", body:JSON.stringify(err), log:resp.log, modifiedtime:resp.modifiedtime,author:resp.author}) 
+                    }
+                } else {
+                    res.json({message:"no perms"})
                 }
-            } else {
-                res.json({message:"no perms"})
             }
         }
+    } catch (err) {
+        res.json({message:err})
     }
+    
 })
 app.post(`/:rev/:namespace/*`, async (req, res) => {
     let namespace = req.params.namespace;
@@ -142,41 +182,6 @@ app.post(`/:rev/:namespace/*`, async (req, res) => {
         }
     } else {
         res.send("nop")
-    }
-})
-app.get(`togglehide/:rev/:namespace/*`, async (req, res) => {
-    let namespace = req.params.namespace;
-    let document = req.params["0"];
-    let rev = req.params.rev
-    const resp = await sql.history.findFirst({
-        where:{
-            namespace:namespace,
-            title:document,
-            rev:Number(rev)
-        }
-    })
-    if (resp == null) {
-        res.status(404).json({message:"not found"})
-    } else {
-        if (req.session.info != undefined) {
-            if (req.session.info.permission.includes("owner") || req.session.info.permission.includes("hide_rev") ) {
-                await sql.history.updateMany({
-                    data:{
-                        hidden:!resp.hidden,
-                    },
-                    where:{
-                        title:document,
-                        namespace:namespace,
-                        rev:Number(rev)
-                    }
-                })
-                res.json({message:"suc"})
-            } else {
-                res.json({message:"no perm"})
-            }
-        } else {
-            res.json({message:"no perm"})
-        }
     }
 })
 module.exports = app;

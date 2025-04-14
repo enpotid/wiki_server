@@ -58,6 +58,7 @@ app.get(`/:namespace/*`, async (req, res) => {
       }
       res.json(content);
     } catch(err) {
+      console.log(err)
       res.json({content:err+"Parser server not working Σ(っ °Д °<span style='color:red;'>;</span>)っ connect to server administrator", acl:documentinfo[0].acl,candowiththisdoc:cando})
     }    
   } else {
