@@ -1,0 +1,9 @@
+[package]
+name = "backend"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.Rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+axum = "0.8.4" # 익스 미안해. 넌 버릴꺼임
